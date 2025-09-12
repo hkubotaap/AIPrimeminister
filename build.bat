@@ -1,0 +1,1 @@
+cd C:\Users\creli\AIMakedGame\AI-Driven_Prime_Minister_Simulator && npm run build

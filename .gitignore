@@ -1,0 +1,76 @@
+# 依存関係
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 環境変数（重要：APIキーを含む）
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+server/.env
+
+# ビルド出力
+dist/
+build/
+
+# ログファイル
+*.log
+
+# IDEファイル
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS生成ファイル
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 一時ファイル
+*.tmp
+*.temp
+
+# キャッシュファイル
+.cache/
+.parcel-cache/
+
+# テストカバレッジ
+coverage/
+
+# Vercel
+.vercel
+
+# Next.js
+.next/
+out/
+
+# SvelteKit
+.svelte-kit/
+
+# サーバー固有
+server/uploads/
+server/logs/
+
+# セキュリティ関連（重要）
+*.key
+*.pem
+*.p12
+*.pfx
+auth.json
+secrets.json
+
+# バックアップファイル
+*.backup
+*.bak
+
+# プロファイリング
+chrome-user-data/
