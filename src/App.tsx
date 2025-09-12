@@ -284,9 +284,9 @@ export default function App() {
       generateFinalSecretaryComment(rankData).then(comment => {
         setSecretaryComment(comment);
         setIsGeneratingComment(false);
-        // タイプライター効果で表示
+        // メッセージを即座に表示
         setTimeout(() => {
-          typewriterEffect(comment);
+          displayMessage(comment);
         }, 500);
       });
     }
@@ -302,32 +302,21 @@ export default function App() {
     return shuffled;
   };
 
-  // タイプライター効果でメッセージを表示（重複防止）
-  const typewriterEffect = (message: string) => {
-    // 既存のタイマーをクリア
+  // 即座にメッセージを表示（タイプライター効果廃止）
+  const displayMessage = (message: string) => {
     setGameState(prev => {
+      // 既存のタイマーがあればクリア
       if (prev.typingTimer) {
         clearInterval(prev.typingTimer);
       }
-      return { ...prev, kasumiDisplayMessage: '', isTyping: true, typingTimer: null };
+      return { 
+        ...prev, 
+        kasumiMessage: message,
+        kasumiDisplayMessage: message,
+        isTyping: false,
+        typingTimer: null
+      };
     });
-    
-    let index = 0;
-    const timer = setInterval(() => {
-      setGameState(prev => ({
-        ...prev,
-        kasumiDisplayMessage: message.substring(0, index + 1)
-      }));
-      
-      index++;
-      if (index >= message.length) {
-        clearInterval(timer);
-        setGameState(prev => ({ ...prev, isTyping: false, typingTimer: null }));
-      }
-    }, 50);
-    
-    // タイマーを状態に保存
-    setGameState(prev => ({ ...prev, typingTimer: timer }));
   };
 
   // 緊急イベントの判定
@@ -356,7 +345,7 @@ export default function App() {
         
         // 緊急イベント発生をKASUMIに通知
         setTimeout(() => {
-          typewriterEffect('きゃー！緊急事態よ！総理、しっかりして！私が付いてるから大丈夫...大丈夫よね？');
+          displayMessage('きゃー！緊急事態よ！総理、しっかりして！私が付いてるから大丈夫...大丈夫よね？');
         }, 500);
         
         return {
@@ -578,9 +567,9 @@ export default function App() {
     const firstEvent = getRandomEvent();
     setGameState(prev => ({ ...prev, isGameStarted: true, turn: 1, currentEvent: firstEvent }));
     
-    // 開始時のKASUMIメッセージをタイプライター効果で表示
+    // 開始時のKASUMIメッセージを表示
     setTimeout(() => {
-      typewriterEffect('総理、いよいよ政権運営の始まりね！私がしっかりサポートするから...べ、別に心配してるわけじゃないのよ？頑張りましょ！');
+      displayMessage('総理、いよいよ政権運営の始まりね！私がしっかりサポートするから...べ、別に心配してるわけじゃないのよ？頑張りましょ！');
     }, 1000);
   };
 
@@ -647,9 +636,9 @@ export default function App() {
             newState.kasumiMessage = analysisMessage;
             newState.isAIThinking = false;
             
-            // タイプライター効果でメッセージを表示
+            // メッセージを即座に表示
             setTimeout(() => {
-              typewriterEffect(analysisMessage);
+              displayMessage(analysisMessage);
             }, 500);
             
             return newState;
@@ -1244,72 +1233,98 @@ export default function App() {
             </div>
 
             {/* AI政治秘書の専門分析 */}
-            <div className={`bg-indigo-900 rounded-lg p-3 border-2 transition-all duration-300 ${
-              gameState.isAIThinking ? 'border-cyan-400 bg-cyan-900/30' : 'border-indigo-700'
+            <div className={`rounded-lg p-4 border-2 shadow-lg transition-all duration-500 ${
+              gameState.isAIThinking 
+                ? 'bg-gradient-to-br from-cyan-900 to-indigo-900 border-cyan-400 shadow-cyan-500/20' 
+                : 'bg-gradient-to-br from-indigo-900 to-purple-900 border-indigo-500 shadow-indigo-500/20'
             }`}>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-semibold text-indigo-300 flex items-center">
-                  🤖 AI政治秘書 KASUMI
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-400 flex items-center justify-center text-sm">
+                    🤖
+                  </div>
+                  <div className="ml-2">
+                    <h4 className="text-sm font-bold text-white">AI政治秘書 KASUMI</h4>
+                    <div className="text-xs text-gray-300">専門政治分析AI</div>
+                  </div>
                   {gameState.isAIThinking && (
-                    <div className="ml-2 flex items-center">
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-400"></div>
-                      <span className="ml-1 text-xs text-cyan-300 animate-pulse">思考中</span>
+                    <div className="ml-3 flex items-center bg-cyan-800/50 px-2 py-1 rounded-full">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-300"></div>
+                      <span className="ml-2 text-xs text-cyan-200 font-medium">分析中</span>
                     </div>
                   )}
-                </h4>
-                <div className="flex gap-1 text-xs">
-                  {!gameState.isAIThinking && (
-                    <>
-                      <span className={`px-1 py-0.5 rounded text-xs ${
-                        gameState.politicalTrends.riskLevel === 'critical' ? 'bg-red-700' :
-                        gameState.politicalTrends.riskLevel === 'high' ? 'bg-orange-700' :
-                        gameState.politicalTrends.riskLevel === 'medium' ? 'bg-yellow-700' : 'bg-green-700'
+                </div>
+                
+                {/* ステータス表示 */}
+                {!gameState.isAIThinking && (
+                  <div className="flex flex-col items-end gap-1 text-xs">
+                    <div className="flex gap-1">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        gameState.politicalTrends.riskLevel === 'critical' ? 'bg-red-600 text-white' :
+                        gameState.politicalTrends.riskLevel === 'high' ? 'bg-orange-600 text-white' :
+                        gameState.politicalTrends.riskLevel === 'medium' ? 'bg-yellow-600 text-black' : 'bg-green-600 text-white'
                       }`}>
                         {
-                          gameState.politicalTrends.riskLevel === 'critical' ? '危機' :
-                          gameState.politicalTrends.riskLevel === 'high' ? '高リスク' :
-                          gameState.politicalTrends.riskLevel === 'medium' ? '中リスク' : '安定'
+                          gameState.politicalTrends.riskLevel === 'critical' ? '⚠️ 危機' :
+                          gameState.politicalTrends.riskLevel === 'high' ? '🔶 高リスク' :
+                          gameState.politicalTrends.riskLevel === 'medium' ? '🔸 中リスク' : '✅ 安定'
                         }
                       </span>
-                      <span className={`px-1 py-0.5 rounded text-xs ${
-                        gameState.politicalTrends.approvalTrend === 'rising' ? 'bg-green-700' :
-                        gameState.politicalTrends.approvalTrend === 'falling' ? 'bg-red-700' : 'bg-gray-700'
-                      }`}>
-                        支持率{
-                          gameState.politicalTrends.approvalTrend === 'rising' ? '↗' :
-                          gameState.politicalTrends.approvalTrend === 'falling' ? '↘' : '→'
-                        }
-                      </span>
-                    </>
-                  )}
-                </div>
+                    </div>
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      gameState.politicalTrends.approvalTrend === 'rising' ? 'bg-green-600 text-white' :
+                      gameState.politicalTrends.approvalTrend === 'falling' ? 'bg-red-600 text-white' : 'bg-gray-600 text-white'
+                    }`}>
+                      支持率 {
+                        gameState.politicalTrends.approvalTrend === 'rising' ? '📈' :
+                        gameState.politicalTrends.approvalTrend === 'falling' ? '📉' : '➡️'
+                      }
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className={`text-xs min-h-[6rem] max-h-[12rem] overflow-y-auto transition-colors duration-300 ${
-                gameState.isAIThinking ? 'text-cyan-100' : 'text-indigo-100'
+              
+              {/* メッセージエリア */}
+              <div className={`min-h-[5rem] max-h-[15rem] overflow-y-auto rounded-lg p-3 transition-all duration-300 ${
+                gameState.isAIThinking 
+                  ? 'bg-cyan-950/50 border border-cyan-600/30' 
+                  : 'bg-indigo-950/50 border border-indigo-600/30'
               }`}>
                 {gameState.isAIThinking ? (
-                  <div className="flex items-center justify-center h-12">
-                    <div className="flex items-center animate-pulse">
-                      <span className="text-cyan-300">🧠</span>
-                      <span className="ml-2 text-cyan-300">政治情勢を詳細分析中...</span>
-                      <div className="ml-2 flex space-x-1">
-                        <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-                        <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                        <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                  <div className="flex flex-col items-center justify-center h-16 space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="text-2xl">🧠</div>
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '200ms'}}></div>
+                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '400ms'}}></div>
                       </div>
+                    </div>
+                    <div className="text-sm text-cyan-200 font-medium animate-pulse">
+                      政治情勢を詳細分析しています...
                     </div>
                   </div>
                 ) : (
-                  <div className="whitespace-pre-wrap leading-relaxed pr-2">
+                  <div className="text-sm text-white leading-relaxed whitespace-pre-wrap">
                     {gameState.kasumiDisplayMessage || gameState.kasumiMessage}
-                    {gameState.isTyping && <span className="animate-pulse">|</span>}
                   </div>
                 )}
-                <div className="mt-2 text-xs text-indigo-300 opacity-70">
-                  🤖 AI: {aiProvider.getProviderConfigs()[currentProvider].displayName}
-                  {aiProvider.getProviderStatus().get(currentProvider)?.latency && (
-                    <span className="ml-2">⚡ {aiProvider.getProviderStatus().get(currentProvider)?.latency}ms</span>
-                  )}
+              </div>
+              
+              {/* AI情報 */}
+              <div className="mt-3 pt-2 border-t border-gray-600/30">
+                <div className="flex items-center justify-between text-xs text-gray-300">
+                  <div className="flex items-center space-x-2">
+                    <span>🤖 {aiProvider.getProviderConfigs()[currentProvider].displayName}</span>
+                    {aiProvider.getProviderStatus().get(currentProvider)?.latency && (
+                      <span className="px-1 py-0.5 bg-gray-700/50 rounded text-xs">
+                        ⚡ {aiProvider.getProviderStatus().get(currentProvider)?.latency}ms
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    Turn {gameState.turn}
+                  </div>
                 </div>
               </div>
             </div>
