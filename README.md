@@ -5,10 +5,11 @@
 ## 🌟 特徴
 
 ### 🤖 AI駆動システム
-- **Gemini API統合**: リアルタイムAI政治分析
+- **マルチAIプロバイダー**: Gemini API、Ollama、オフラインモード対応
 - **ツンデレAI秘書KASUMI**: 感情豊かな政治コメント
 - **動的イベント生成**: 100問のAI生成政治課題
 - **インテリジェント評価**: 8つの指標による多角的評価
+- **プライベートAI**: Ollamaによるローカル処理オプション
 
 ### 🎯 ゲーム体験
 - **現実的な政治課題**: 円安、半導体戦略、少子高齢化など
@@ -75,6 +76,37 @@ RATE_LIMIT_MAX_REQUESTS=100
 1. [Google AI Studio](https://makersuite.google.com/app/apikey) にアクセス
 2. APIキーを生成
 3. `server/.env` に設定
+
+### Ollama設定（ローカルAI）
+1. Ollamaをインストール:
+   ```bash
+   # Windows
+   winget install Ollama.Ollama
+   
+   # macOS
+   brew install ollama
+   
+   # Linux
+   curl -fsSL https://ollama.ai/install.sh | sh
+   ```
+
+2. モデルをダウンロード:
+   ```bash
+   ollama pull llama3.1:8b
+   # または他のモデル
+   ollama pull llama3.2:3b  # 軽量版
+   ollama pull codellama:7b # コード特化
+   ```
+
+3. Ollamaサーバー起動:
+   ```bash
+   ollama serve
+   ```
+
+4. 利用可能なモデル確認:
+   ```bash
+   ollama list
+   ```
 
 ## 🎮 ゲームプレイ
 

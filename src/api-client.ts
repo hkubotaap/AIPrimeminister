@@ -13,7 +13,7 @@ export class SecureAPIClient {
 
     constructor() {
         // 開発環境とプロダクション環境で自動切り替え
-        this.baseURL = import.meta.env.PROD 
+        this.baseURL = (import.meta.env as any).PROD 
             ? '/api'  // プロダクション環境
             : 'http://localhost:3001/api';  // 開発環境
         
@@ -123,6 +123,66 @@ export class SecureAPIClient {
             return response.ok && data.status === 'OK';
         } catch (error) {
             console.error('❌ サーバーヘルスチェック失敗:', error);
+            return false;
+        }
+    }
+
+    // Ollamaツンデレコメント生成（サーバーサイドプロキシ経由）
+    async generateOllamaTsundereComment(
+        gameState: any,
+        policyChoice: string,
+        effect: any
+    ): Promise<string> {
+        try {
+            console.log('🦙 OllamaサーバーサイドAPI呼び出し開始');
+            
+            const response = await fetch(`${this.baseURL}/ollama/generate-tsundere-comment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    gameState,
+                    policyChoice,
+                    effect
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`Server error: ${response.status} - ${errorData.error || response.statusText}`);
+            }
+
+            const data: ServerResponse = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Server returned unsuccessful response');
+            }
+
+            if (data.fallback) {
+                console.log('⚠️ Ollamaフォールバックコメントを使用');
+            } else {
+                console.log('✅ Ollama APIからコメント生成成功');
+            }
+
+            return data.comment || this.getFallbackComment(effect);
+
+        } catch (error) {
+            console.error('❌ OllamaサーバーサイドAPI呼び出しエラー:', error);
+            console.log('🔄 クライアントサイドフォールバックに切り替え');
+            return this.getFallbackComment(effect);
+        }
+    }
+
+    // Ollama接続確認
+    async checkOllamaHealth(): Promise<boolean> {
+        try {
+            const response = await fetch(`${this.baseURL}/ollama/health`);
+            const data = await response.json();
+            console.log('🦙 Ollamaヘルスチェック:', data);
+            return data.available;
+        } catch (error) {
+            console.error('❌ Ollamaヘルスチェック失敗:', error);
             return false;
         }
     }

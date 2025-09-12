@@ -3,7 +3,11 @@
     "allow": [
       "mcp__sequential-thinking__sequentialthinking",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git remote remove:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []

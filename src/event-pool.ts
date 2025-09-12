@@ -363,7 +363,7 @@ export const generateAdditionalEvents = (): AIGeneratedEvent[] => {
   // 各カテゴリのバリエーション展開
   const baseCategories = ['economy', 'diplomacy', 'social', 'environment', 'technology', 'education', 'labor', 'regional', 'healthcare', 'disaster'];
   
-  baseCategories.forEach((category, categoryIndex) => {
+  baseCategories.forEach((category) => {
     for (let i = 0; i < 8; i++) {
       additionalEvents.push({
         id: `ai_${category}_${String(i + 10).padStart(3, '0')}`,

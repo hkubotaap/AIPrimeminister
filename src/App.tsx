@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import React from 'react';
-import { SecureAPIClient } from './api-client';
+import { AIProviderManager, AIProvider } from './ai-provider';
 import { SecurityValidator } from './security-config';
 
 // ポリシー効果の型
@@ -255,6 +255,7 @@ export default function App() {
     kasumiMessage: '総理、お疲れ様です。政治情勢の分析を開始いたします。',
     kasumiDisplayMessage: '',
     isTyping: false,
+    typingTimer: null,
     lastEffect: null,
     showEffectDetails: false,
     historyData: [],
@@ -269,7 +270,7 @@ export default function App() {
   });
   const [customPolicy, setCustomPolicy] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [finalScore, setFinalScore] = useState(0);
+  const [, setFinalScore] = useState(0);
   const [secretaryComment, setSecretaryComment] = useState<string>('');
   const [isGeneratingComment, setIsGeneratingComment] = useState(false);
 
@@ -424,25 +425,26 @@ export default function App() {
     };
   };
 
-  // Secure API Clientインスタンス
-  const apiClient = new SecureAPIClient();
+  // AI Provider Managerインスタンス
+  const [aiProvider] = useState(() => new AIProviderManager());
+  const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
+  const [showProviderSettings, setShowProviderSettings] = useState(false);
 
   // ツンデレAI政治秘書KASUMIの分析コメント（Claude API使用）
   const getAISecretaryAnalysis = async (effect: PolicyEffect, policyChoice: string): Promise<string> => {
     try {
-      // サーバーサイドプロキシ経由でツンデレコメントを生成
-      return await apiClient.generateTsundereComment(gameState, policyChoice, effect);
+      // AIプロバイダーマネージャー経由でツンデレコメントを生成
+      return await aiProvider.generateTsundereComment(gameState, policyChoice, effect);
     } catch (error) {
       return getAISecretaryAnalysisFallback(effect, policyChoice);
     }
   };
 
   // フォールバック版のツンデレ分析
-  const getAISecretaryAnalysisFallback = (effect: PolicyEffect, policyChoice: string): string => {
+  const getAISecretaryAnalysisFallback = (effect: PolicyEffect, _policyChoice: string): string => {
     const approvalChange = effect.approvalRating || 0;
     const gdpChange = effect.gdp || 0;
     const stockChange = effect.stockPrice || 0;
-    const debtChange = effect.nationalDebt || 0;
     const diplomacyChange = effect.diplomacy || 0;
     
     // 緊急イベント時の特別コメント
@@ -774,32 +776,9 @@ export default function App() {
   const generateFinalSecretaryComment = async (rankData: any): Promise<string> => {
     const { rank, totalScore, scores } = rankData;
     
-    // Claude APIを使用した総括評価生成を試行
+    // AI APIを使用した総括評価生成を試行
     try {
-      const prompt = `
-あなたは日本の総理大臣のツンデレAI政治秘書KASUMIです。政権運営が終了し、総括評価を行います。
-
-政権実績:
-- 総合ランク: ${rank} (${rankData.rankTitle})
-- 総合スコア: ${totalScore}/100
-- 支持率スコア: ${Math.round(scores.approval)}
-- 経済スコア: ${Math.round(scores.economy)}
-- 財政スコア: ${Math.round(scores.fiscal)}
-- 外交スコア: ${Math.round(scores.diplomacy)}
-- 技術スコア: ${Math.round(scores.technology)}
-- 環境スコア: ${Math.round(scores.environment)}
-
-以下の条件でツンデレ口調の総括評価コメントを200文字以内で生成してください：
-1. 「総理」と呼びかける
-2. ツンデレ要素を含む（照れ、強がり、本音の漏れ）
-3. 政治的実績を専門的に評価
-4. 感情的な表現も含める
-5. 最後は励ましや愛情を込めた言葉で締める
-
-ランクが高い場合は照れながら褒め、低い場合は心配しながらも支える姿勢を示してください。
-`;
-
-      // 実際のClaude API呼び出しはここでは省略し、フォールバック版を使用
+      // 実際のAPI呼び出しはここでは省略し、フォールバック版を使用
       return generateTsundereFinalComment(rankData);
       
     } catch (error) {
@@ -809,7 +788,7 @@ export default function App() {
 
   // ツンデレ総括評価のフォールバック版
   const generateTsundereFinalComment = (rankData: any): string => {
-    const { rank, totalScore, scores } = rankData;
+    const { rank, scores } = rankData;
     
     const strengths = [];
     const weaknesses = [];
@@ -870,6 +849,24 @@ export default function App() {
     return data;
   };
 
+  // AIプロバイダー変更
+  const handleProviderChange = (provider: AIProvider) => {
+    const success = aiProvider.setProvider(provider);
+    if (success) {
+      setCurrentProvider(provider);
+      console.log(`🔄 AIプロバイダー変更: ${provider}`);
+    }
+  };
+
+  // プロバイダー設定の初期化
+  React.useEffect(() => {
+    const initProvider = async () => {
+      await aiProvider.recheckProviders();
+      setCurrentProvider(aiProvider.getCurrentProvider());
+    };
+    initProvider();
+  }, []);
+
   // リセット
   const resetGame = () => {
     setGameState({
@@ -890,6 +887,7 @@ export default function App() {
       kasumiMessage: '総理、お疲れ様です。政治情勢の分析を開始いたします。',
       kasumiDisplayMessage: '',
       isTyping: false,
+      typingTimer: null,
       emergencyEventCount: 0,
       lastEffect: null,
       showEffectDetails: false,
@@ -911,12 +909,97 @@ export default function App() {
 
   // 開始前
   if (!gameState.isGameStarted) {
+    const providerConfigs = aiProvider.getProviderConfigs();
+    const providerStatus = aiProvider.getProviderStatus();
+    
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center">
-        <div className="text-center max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center p-4">
+        <div className="text-center max-w-2xl">
           <h1 className="text-4xl font-bold mb-6">🏛️ AI総理大臣シミュレーター</h1>
           <p className="mb-4 text-gray-300">現代日本の政治課題に挑戦しよう</p>
           <p className="mb-6 text-sm text-cyan-300">📊 現実的な政策シミュレーション</p>
+          
+          {/* AIプロバイダー選択 */}
+          <div className="mb-8 p-4 bg-slate-800 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 flex items-center justify-center">
+              🤖 AI秘書KASUMIの頭脳を選択
+              <button
+                onClick={() => setShowProviderSettings(!showProviderSettings)}
+                className="ml-2 text-sm text-cyan-400 hover:text-cyan-300"
+              >
+                ⚙️
+              </button>
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              {Object.entries(providerConfigs).map(([key, config]) => {
+                const status = providerStatus.get(key as AIProvider);
+                const isSelected = currentProvider === key;
+                const isAvailable = status?.available || false;
+                
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleProviderChange(key as AIProvider)}
+                    disabled={!isAvailable}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      isSelected
+                        ? 'border-cyan-400 bg-cyan-900/30 text-cyan-300'
+                        : isAvailable
+                        ? 'border-slate-600 bg-slate-700 hover:border-slate-500 text-white'
+                        : 'border-slate-700 bg-slate-800 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="text-2xl mb-1">{config.icon}</div>
+                    <div className="font-semibold text-sm">{config.displayName}</div>
+                    <div className="text-xs text-gray-400 mt-1">{config.description}</div>
+                    {status?.latency && (
+                      <div className="text-xs text-green-400 mt-1">
+                        ⚡ {status.latency}ms
+                      </div>
+                    )}
+                    {!isAvailable && (
+                      <div className="text-xs text-red-400 mt-1">
+                        ❌ 利用不可
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            
+            {showProviderSettings && (
+              <div className="text-left bg-slate-900 p-4 rounded-lg text-sm">
+                <h4 className="font-semibold mb-2">🔧 設定情報</h4>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-cyan-400">🧠 Gemini:</span> サーバーサイドプロキシ経由で高品質なAI分析
+                  </div>
+                  <div>
+                    <span className="text-cyan-400">🦙 Ollama:</span> ローカルで動作するプライベートAI
+                    <div className="text-xs text-gray-400 ml-4">
+                      • Ollamaをインストール: <code>curl -fsSL https://ollama.ai/install.sh | sh</code>
+                      <br />
+                      • モデルダウンロード: <code>ollama pull llama3.1:8b</code>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-cyan-400">🔄 オフライン:</span> インターネット不要のフォールバックモード
+                  </div>
+                </div>
+                <button
+                  onClick={() => aiProvider.recheckProviders().then(() => setCurrentProvider(aiProvider.getCurrentProvider()))}
+                  className="mt-3 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 rounded text-xs"
+                >
+                  🔄 再チェック
+                </button>
+              </div>
+            )}
+            
+            <div className="text-xs text-gray-400">
+              現在選択: <span className="text-cyan-400">{providerConfigs[currentProvider].displayName}</span>
+            </div>
+          </div>
           
           <button
             onClick={startGame}
@@ -931,7 +1014,6 @@ export default function App() {
 
   // 終了画面
   if (gameState.isGameOver) {
-    const chartData = generateChartData();
     const rankData = calculateFinalRank();
     
     return (
@@ -1181,6 +1263,12 @@ export default function App() {
                   {gameState.kasumiDisplayMessage || gameState.kasumiMessage}
                   {gameState.isTyping && <span className="animate-pulse">|</span>}
                 </p>
+                <div className="mt-2 text-xs text-indigo-300 opacity-70">
+                  🤖 AI: {aiProvider.getProviderConfigs()[currentProvider].displayName}
+                  {aiProvider.getProviderStatus().get(currentProvider)?.latency && (
+                    <span className="ml-2">⚡ {aiProvider.getProviderStatus().get(currentProvider)?.latency}ms</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

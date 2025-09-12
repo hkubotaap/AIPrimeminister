@@ -46,7 +46,7 @@ export class GeminiAPI {
         }
         
         // 本番環境警告
-        if (import.meta.env.PROD && this.apiKey) {
+        if ((import.meta.env as any).PROD && this.apiKey) {
             console.warn('⚠️ セキュリティ警告: APIキーがクライアントサイドで使用されています。本番環境ではサーバーサイドプロキシを使用してください。');
         }
     }

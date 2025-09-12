@@ -85,7 +85,7 @@ export class SecurityValidator {
 
     // 本番環境での警告表示
     static checkProductionSecurity(): void {
-        if (import.meta.env.PROD) {
+        if ((import.meta.env as any).PROD) {
             const hasApiKey = !!(import.meta as any).env?.VITE_GEMINI_API_KEY;
             
             if (hasApiKey && SECURITY_CONFIG.WARN_CLIENT_SIDE_API_KEY) {
