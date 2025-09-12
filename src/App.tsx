@@ -1284,7 +1284,7 @@ export default function App() {
                   )}
                 </div>
               </div>
-              <div className={`text-xs min-h-[3rem] transition-colors duration-300 ${
+              <div className={`text-xs min-h-[6rem] max-h-[12rem] overflow-y-auto transition-colors duration-300 ${
                 gameState.isAIThinking ? 'text-cyan-100' : 'text-indigo-100'
               }`}>
                 {gameState.isAIThinking ? (
@@ -1300,10 +1300,10 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  <p>
+                  <div className="whitespace-pre-wrap leading-relaxed pr-2">
                     {gameState.kasumiDisplayMessage || gameState.kasumiMessage}
                     {gameState.isTyping && <span className="animate-pulse">|</span>}
-                  </p>
+                  </div>
                 )}
                 <div className="mt-2 text-xs text-indigo-300 opacity-70">
                   🤖 AI: {aiProvider.getProviderConfigs()[currentProvider].displayName}
