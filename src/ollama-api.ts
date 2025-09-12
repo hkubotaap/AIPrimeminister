@@ -34,10 +34,15 @@ export class OllamaAPI {
     // 利用可能なモデル一覧を取得
     async getAvailableModels(): Promise<string[]> {
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+            
             const response = await fetch(`${this.baseURL}/api/tags`, {
                 method: 'GET',
-                signal: AbortSignal.timeout(this.timeout)
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 throw new Error(`Ollama API error: ${response.status}`);
@@ -54,10 +59,15 @@ export class OllamaAPI {
     // Ollamaサーバーの接続確認
     async checkConnection(): Promise<boolean> {
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
             const response = await fetch(`${this.baseURL}/api/version`, {
                 method: 'GET',
-                signal: AbortSignal.timeout(5000)
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             
             const isConnected = response.ok;
             console.log(isConnected ? '✅ Ollama接続成功' : '❌ Ollama接続失敗');

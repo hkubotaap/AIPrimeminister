@@ -503,6 +503,191 @@ app.post('/api/ollama/generate-tsundere-comment', validateInput, async (req, res
   }
 });
 
+// Gemini政策効果分析エンドポイント
+app.post('/api/analyze-policy-effects', validateInput, async (req, res) => {
+  try {
+    const { prompt, context } = req.body;
+    
+    console.log('📊 Gemini政策効果分析リクエスト受信');
+    console.log('政策:', context.policyChoice);
+    
+    const response = await fetch(`${GEMINI_BASE_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.3, // 政策分析は一貫性を重視
+          topK: 40,
+          topP: 0.8,
+          maxOutputTokens: 1500,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Gemini API Error:', response.status, errorText);
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.candidates[0]?.content?.parts[0]?.text || '';
+
+    // JSONレスポンスをパース
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const analysis = JSON.parse(jsonMatch[0]);
+        console.log('✅ Gemini政策効果分析成功');
+        
+        res.json({
+          success: true,
+          analysis: analysis,
+          provider: 'gemini',
+          timestamp: new Date().toISOString()
+        });
+      } catch (parseError) {
+        console.error('❌ JSON解析エラー:', parseError);
+        throw new Error('Invalid JSON response from Gemini');
+      }
+    } else {
+      throw new Error('No valid JSON found in Gemini response');
+    }
+    
+  } catch (error) {
+    console.error('❌ Gemini政策効果分析エラー:', error);
+    
+    // フォールバック分析
+    const fallbackAnalysis = {
+      effects: {
+        approvalRating: Math.floor(Math.random() * 21) - 10,
+        gdp: Math.floor(Math.random() * 41) - 20,
+        nationalDebt: Math.floor(Math.random() * 101) - 50,
+        technology: Math.floor(Math.random() * 21) - 10,
+        environment: Math.floor(Math.random() * 21) - 10,
+        stockPrice: Math.floor(Math.random() * 2001) - 1000,
+        usdJpyRate: Math.floor(Math.random() * 11) - 5,
+        diplomacy: Math.floor(Math.random() * 21) - 10
+      },
+      reasoning: "政策効果を分析しました。現在はフォールバックモードで動作しています。",
+      confidence: Math.floor(Math.random() * 30) + 60,
+      timeframe: "short_term",
+      risks: ["政策実行の困難さ", "予期せぬ副作用"],
+      opportunities: ["政策効果の拡大", "国民の理解促進"]
+    };
+    
+    res.json({
+      success: true,
+      analysis: fallbackAnalysis,
+      provider: 'gemini',
+      fallback: true,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Ollama政策効果分析エンドポイント
+app.post('/api/ollama/analyze-policy-effects', validateInput, async (req, res) => {
+  try {
+    const { prompt, context } = req.body;
+    
+    console.log('🦙 Ollama政策効果分析リクエスト受信');
+    console.log('政策:', context.policyChoice);
+    
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: 0.3, // 政策分析は一貫性を重視
+          top_p: 0.8,
+          top_k: 40,
+          num_predict: 800,
+          stop: ['\n\n注意:', '\n\n例:', '説明:']
+        }
+      }),
+      signal: AbortSignal.timeout(45000) // 政策分析は時間がかかる可能性
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ollama API Error:', response.status, errorText);
+      throw new Error(`Ollama API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.response?.trim() || '';
+    
+    // JSONレスポンスをパース
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const analysis = JSON.parse(jsonMatch[0]);
+        console.log('✅ Ollama政策効果分析成功');
+        console.log('生成時間:', data.total_duration ? `${Math.round(data.total_duration / 1000000)}ms` : 'N/A');
+        
+        res.json({
+          success: true,
+          analysis: analysis,
+          provider: 'ollama',
+          model: OLLAMA_MODEL,
+          generation_time: data.total_duration ? Math.round(data.total_duration / 1000000) : null,
+          timestamp: new Date().toISOString()
+        });
+      } catch (parseError) {
+        console.error('❌ JSON解析エラー:', parseError);
+        throw new Error('Invalid JSON response from Ollama');
+      }
+    } else {
+      throw new Error('No valid JSON found in Ollama response');
+    }
+    
+  } catch (error) {
+    console.error('❌ Ollama政策効果分析エラー:', error);
+    
+    // フォールバック分析
+    const fallbackAnalysis = {
+      effects: {
+        approvalRating: Math.floor(Math.random() * 21) - 10,
+        gdp: Math.floor(Math.random() * 41) - 20,
+        nationalDebt: Math.floor(Math.random() * 101) - 50,
+        technology: Math.floor(Math.random() * 21) - 10,
+        environment: Math.floor(Math.random() * 21) - 10,
+        stockPrice: Math.floor(Math.random() * 2001) - 1000,
+        usdJpyRate: Math.floor(Math.random() * 11) - 5,
+        diplomacy: Math.floor(Math.random() * 21) - 10
+      },
+      reasoning: "政策効果を分析しました。現在はフォールバックモードで動作しています。",
+      confidence: Math.floor(Math.random() * 30) + 60,
+      timeframe: "short_term",
+      risks: ["政策実行の困難さ", "予期せぬ副作用"],
+      opportunities: ["政策効果の拡大", "国民の理解促進"]
+    };
+    
+    res.json({
+      success: true,
+      analysis: fallbackAnalysis,
+      provider: 'ollama',
+      fallback: true,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // エラーハンドリング
 app.use((err, req, res, next) => {
   console.error('❌ Server Error:', err);

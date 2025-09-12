@@ -87,9 +87,9 @@ export class AIProviderManager {
             });
         }
 
-        // Ollama チェック
+        // Ollama チェック（サーバーサイド経由）
         try {
-            const ollamaAvailable = await this.ollamaClient.checkConnection();
+            const ollamaAvailable = await this.secureClient.checkOllamaHealth();
             this.providerStatus.set('ollama', {
                 provider: 'ollama',
                 available: ollamaAvailable
@@ -167,7 +167,7 @@ export class AIProviderManager {
                     break;
                 
                 case 'ollama':
-                    result = await this.ollamaClient.generateTsundereComment(gameState, policyChoice, effect);
+                    result = await this.secureClient.generateOllamaTsundereComment(gameState, policyChoice, effect);
                     break;
                 
                 case 'fallback':

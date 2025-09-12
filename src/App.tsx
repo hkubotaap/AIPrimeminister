@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import React from 'react';
 import { AIProviderManager, AIProvider } from './ai-provider';
+import { PolicyAnalyzer, PolicyContext } from './policy-analyzer';
 import { SecurityValidator } from './security-config';
 
 // ポリシー効果の型
@@ -13,6 +14,13 @@ interface PolicyEffect {
   stockPrice?: number;
   usdJpyRate?: number;
   diplomacy?: number;
+  aiAnalysis?: {
+    reasoning: string;
+    confidence: number;
+    timeframe: string;
+    risks: string[];
+    opportunities: string[];
+  };
 }
 
 // 選択肢の型
@@ -35,6 +43,13 @@ interface GameLog {
   event: string;
   choice: string;
   effect: PolicyEffect;
+  aiAnalysis?: {
+    reasoning: string;
+    confidence: number;
+    timeframe: string;
+    risks: string[];
+    opportunities: string[];
+  };
 }
 
 // ゲームステートの型
@@ -57,7 +72,7 @@ interface GameState {
   kasumiDisplayMessage: string;
   isTyping: boolean;
   isAIThinking: boolean;
-  typingTimer: NodeJS.Timeout | null;
+  typingTimer: number | null;
   lastEffect: PolicyEffect | null;
   showEffectDetails: boolean;
   historyData: Array<{
@@ -307,7 +322,7 @@ export default function App() {
     setGameState(prev => {
       // 既存のタイマーがあればクリア
       if (prev.typingTimer) {
-        clearInterval(prev.typingTimer);
+        window.clearInterval(prev.typingTimer);
       }
       return { 
         ...prev, 
@@ -418,8 +433,10 @@ export default function App() {
 
   // AI Provider Managerインスタンス
   const [aiProvider] = useState(() => new AIProviderManager());
+  const [policyAnalyzer] = useState(() => new PolicyAnalyzer(aiProvider));
   const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
+  const [isAnalyzingPolicy, setIsAnalyzingPolicy] = useState(false);
 
   // ツンデレAI政治秘書KASUMIの分析コメント（Claude API使用）
   const getAISecretaryAnalysis = async (effect: PolicyEffect, policyChoice: string): Promise<string> => {
@@ -574,14 +591,44 @@ export default function App() {
   };
 
   // 政策選択ハンドラ
-  const handlePolicyChoice = (option: PolicyOption) => {
+  // AI駆動政策選択ハンドラ
+  const handlePolicyChoice = async (option: PolicyOption) => {
     if (isProcessing || !gameState.currentEvent) return;
     setIsProcessing(true);
+    setIsAnalyzingPolicy(true);
     
-    setTimeout(() => {
-      setGameState(prev => {
-        const next = { ...prev };
-        const eff = option.effect;
+    try {
+      // AI政策効果分析を実行
+      const policyContext: PolicyContext = {
+        eventTitle: gameState.currentEvent.title,
+        eventDescription: gameState.currentEvent.description,
+        policyChoice: option.text,
+        currentState: {
+          turn: gameState.turn,
+          approvalRating: gameState.approvalRating,
+          gdp: gameState.gdp,
+          nationalDebt: gameState.nationalDebt,
+          technology: gameState.technology,
+          environment: gameState.environment,
+          stockPrice: gameState.stockPrice,
+          usdJpyRate: gameState.usdJpyRate,
+          diplomacy: gameState.diplomacy,
+        },
+        politicalTrends: gameState.politicalTrends,
+        previousPolicies: gameState.gameLog.map(log => log.choice)
+      };
+
+      console.log('🔍 AI政策効果分析開始...');
+      const analysisResult = await policyAnalyzer.analyzePolicyEffects(policyContext);
+      console.log('✅ AI政策効果分析完了:', analysisResult);
+      
+      setIsAnalyzingPolicy(false);
+
+      // 分析結果を適用
+      setTimeout(() => {
+        setGameState(prev => {
+          const next = { ...prev };
+          const eff = analysisResult.effects;
         
         // 履歴データに現在の状態を保存
         next.historyData = [
@@ -595,25 +642,34 @@ export default function App() {
           }
         ];
         
-        // 効果適用
-        if (eff.approvalRating) next.approvalRating = Math.max(0, Math.min(100, next.approvalRating + eff.approvalRating));
-        if (eff.gdp) next.gdp = Math.max(0, next.gdp + eff.gdp);
-        if (eff.nationalDebt) next.nationalDebt = Math.max(0, next.nationalDebt + eff.nationalDebt);
-        if (eff.technology) next.technology = Math.max(0, Math.min(100, next.technology + eff.technology));
-        if (eff.environment) next.environment = Math.max(0, Math.min(100, next.environment + eff.environment));
-        if (eff.stockPrice) next.stockPrice = Math.max(10000, next.stockPrice + eff.stockPrice);
-        if (eff.usdJpyRate) next.usdJpyRate = Math.max(100, Math.min(200, next.usdJpyRate + eff.usdJpyRate));
-        if (eff.diplomacy) next.diplomacy = Math.max(0, Math.min(100, next.diplomacy + eff.diplomacy));
+        // AI分析による効果適用
+        next.approvalRating = Math.max(0, Math.min(100, next.approvalRating + eff.approvalRating));
+        next.gdp = Math.max(0, next.gdp + eff.gdp);
+        next.nationalDebt = Math.max(0, next.nationalDebt + eff.nationalDebt);
+        next.technology = Math.max(0, Math.min(100, next.technology + eff.technology));
+        next.environment = Math.max(0, Math.min(100, next.environment + eff.environment));
+        next.stockPrice = Math.max(10000, next.stockPrice + eff.stockPrice);
+        next.usdJpyRate = Math.max(100, Math.min(200, next.usdJpyRate + eff.usdJpyRate));
+        next.diplomacy = Math.max(0, Math.min(100, next.diplomacy + eff.diplomacy));
         
-        // 効果の詳細を保存
-        next.lastEffect = eff;
+        // 効果の詳細を保存（AI分析結果を含む）
+        next.lastEffect = {
+          ...eff,
+          aiAnalysis: analysisResult
+        };
         next.showEffectDetails = true;
         
         // ログ追加
         const currentEventId = next.currentEvent!.id || next.currentEvent!.title;
         next.gameLog = [
           ...next.gameLog,
-          { turn: next.turn, event: currentEventId, choice: option.text, effect: eff },
+          { 
+            turn: next.turn, 
+            event: currentEventId, 
+            choice: option.text, 
+            effect: eff,
+            aiAnalysis: analysisResult
+          },
         ];
         
         // 使用済みイベントIDを更新
@@ -659,7 +715,86 @@ export default function App() {
         return next;
       });
       setIsProcessing(false);
-    }, 800);
+    }, 500);
+
+    } catch (error) {
+      console.error('❌ AI政策効果分析エラー:', error);
+      setIsAnalyzingPolicy(false);
+      
+      // エラー時は従来の固定効果を使用
+      setTimeout(() => {
+        setGameState(prev => {
+          const next = { ...prev };
+          const eff = option.effect;
+          
+          // 履歴データに現在の状態を保存
+          next.historyData = [
+            ...next.historyData,
+            {
+              turn: next.turn,
+              approvalRating: next.approvalRating,
+              gdp: next.gdp,
+              stockPrice: next.stockPrice,
+              diplomacy: next.diplomacy,
+            }
+          ];
+          
+          // 従来の効果適用
+          if (eff.approvalRating) next.approvalRating = Math.max(0, Math.min(100, next.approvalRating + eff.approvalRating));
+          if (eff.gdp) next.gdp = Math.max(0, next.gdp + eff.gdp);
+          if (eff.nationalDebt) next.nationalDebt = Math.max(0, next.nationalDebt + eff.nationalDebt);
+          if (eff.technology) next.technology = Math.max(0, Math.min(100, next.technology + eff.technology));
+          if (eff.environment) next.environment = Math.max(0, Math.min(100, next.environment + eff.environment));
+          if (eff.stockPrice) next.stockPrice = Math.max(10000, next.stockPrice + eff.stockPrice);
+          if (eff.usdJpyRate) next.usdJpyRate = Math.max(100, Math.min(200, next.usdJpyRate + eff.usdJpyRate));
+          if (eff.diplomacy) next.diplomacy = Math.max(0, Math.min(100, next.diplomacy + eff.diplomacy));
+          
+          // 効果の詳細を保存
+          next.lastEffect = eff;
+          next.showEffectDetails = true;
+          
+          // ログ追加
+          const currentEventId = next.currentEvent!.id || next.currentEvent!.title;
+          next.gameLog = [
+            ...next.gameLog,
+            { turn: next.turn, event: currentEventId, choice: option.text, effect: eff },
+          ];
+          
+          // 使用済みイベントIDを更新
+          if (!next.usedEventIds.includes(currentEventId)) {
+            next.usedEventIds = [...next.usedEventIds, currentEventId];
+            console.log('イベントID追加:', currentEventId, '使用済み:', next.usedEventIds);
+          } else {
+            console.warn('重複イベント検出:', currentEventId);
+          }
+          
+          // 政治トレンド分析を更新
+          next.politicalTrends = analyzePoliticalTrends(next);
+          
+          // AI駆動の専門的政治分析コメント
+          getAISecretaryAnalysis(eff, option.text).then(analysisMessage => {
+            next.kasumiMessage = analysisMessage;
+            
+            // タイプライター効果でメッセージを表示
+            setTimeout(() => {
+              typewriterEffect(analysisMessage);
+            }, 1000);
+          });
+          
+          // 次ターンor終了判定
+          if (next.turn >= next.maxTurns) {
+            next.isGameOver = true;
+            const score = Math.round((next.approvalRating + next.technology + next.environment + next.diplomacy) / 4);
+            setFinalScore(score);
+          } else {
+            next.turn += 1;
+            next.currentEvent = getRandomEvent();
+          }
+          return next;
+        });
+        setIsProcessing(false);
+      }, 800);
+    }
   };
 
   // カスタム政策（セキュリティ強化版）
@@ -1344,7 +1479,14 @@ export default function App() {
                     disabled={isProcessing}
                     className="w-full text-left px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-sm disabled:opacity-50 transition-colors"
                   >
-                    {opt.text}
+                    <div className="flex items-center justify-between">
+                      <span>{opt.text}</span>
+                      {isProcessing && isAnalyzingPolicy && (
+                        <span className="text-xs text-cyan-300 animate-pulse">
+                          🤖 AI分析中...
+                        </span>
+                      )}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -1420,6 +1562,44 @@ export default function App() {
                     </div>
                   )}
                 </div>
+                
+                {/* AI分析結果表示 */}
+                {gameState.lastEffect.aiAnalysis && (
+                  <div className="mt-4 pt-3 border-t border-cyan-700">
+                    <div className="text-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-cyan-300">🤖 AI分析:</span>
+                        <span className="text-xs bg-cyan-800 px-2 py-1 rounded">
+                          信頼度 {gameState.lastEffect.aiAnalysis.confidence}%
+                        </span>
+                        <span className="text-xs bg-purple-800 px-2 py-1 rounded">
+                          {aiProvider.getProviderConfigs()[currentProvider].displayName}
+                        </span>
+                      </div>
+                      <p className="text-gray-200 text-xs leading-relaxed">
+                        {gameState.lastEffect.aiAnalysis.reasoning}
+                      </p>
+                      
+                      {gameState.lastEffect.aiAnalysis.risks.length > 0 && (
+                        <div className="mt-2">
+                          <span className="text-red-300 text-xs">⚠️ リスク: </span>
+                          <span className="text-gray-300 text-xs">
+                            {gameState.lastEffect.aiAnalysis.risks.join(', ')}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {gameState.lastEffect.aiAnalysis.opportunities.length > 0 && (
+                        <div className="mt-1">
+                          <span className="text-green-300 text-xs">💡 機会: </span>
+                          <span className="text-gray-300 text-xs">
+                            {gameState.lastEffect.aiAnalysis.opportunities.join(', ')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
