@@ -56,6 +56,7 @@ interface GameState {
   kasumiMessage: string;
   kasumiDisplayMessage: string;
   isTyping: boolean;
+  isAIThinking: boolean;
   typingTimer: NodeJS.Timeout | null;
   lastEffect: PolicyEffect | null;
   showEffectDetails: boolean;
@@ -255,6 +256,7 @@ export default function App() {
     kasumiMessage: '総理、お疲れ様です。政治情勢の分析を開始いたします。',
     kasumiDisplayMessage: '',
     isTyping: false,
+    isAIThinking: false,
     typingTimer: null,
     lastEffect: null,
     showEffectDetails: false,
@@ -637,13 +639,23 @@ export default function App() {
         next.politicalTrends = analyzePoliticalTrends(next);
         
         // AI駆動の専門的政治分析コメント
+        setGameState(prevState => ({ ...prevState, isAIThinking: true, kasumiDisplayMessage: 'AI秘書KASUMIが政治情勢を分析中...' }));
+        
         getAISecretaryAnalysis(eff, option.text).then(analysisMessage => {
-          next.kasumiMessage = analysisMessage;
-          
-          // タイプライター効果でメッセージを表示
-          setTimeout(() => {
-            typewriterEffect(analysisMessage);
-          }, 1000);
+          setGameState(prevState => {
+            const newState = { ...prevState };
+            newState.kasumiMessage = analysisMessage;
+            newState.isAIThinking = false;
+            
+            // タイプライター効果でメッセージを表示
+            setTimeout(() => {
+              typewriterEffect(analysisMessage);
+            }, 500);
+            
+            return newState;
+          });
+        }).catch(() => {
+          setGameState(prevState => ({ ...prevState, isAIThinking: false }));
         });
         
         // 次ターンor終了判定
@@ -1232,37 +1244,67 @@ export default function App() {
             </div>
 
             {/* AI政治秘書の専門分析 */}
-            <div className="bg-indigo-900 rounded-lg p-3">
+            <div className={`bg-indigo-900 rounded-lg p-3 border-2 transition-all duration-300 ${
+              gameState.isAIThinking ? 'border-cyan-400 bg-cyan-900/30' : 'border-indigo-700'
+            }`}>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-semibold text-indigo-300">🤖 AI政治秘書 KASUMI</h4>
+                <h4 className="text-sm font-semibold text-indigo-300 flex items-center">
+                  🤖 AI政治秘書 KASUMI
+                  {gameState.isAIThinking && (
+                    <div className="ml-2 flex items-center">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-400"></div>
+                      <span className="ml-1 text-xs text-cyan-300 animate-pulse">思考中</span>
+                    </div>
+                  )}
+                </h4>
                 <div className="flex gap-1 text-xs">
-                  <span className={`px-1 py-0.5 rounded text-xs ${
-                    gameState.politicalTrends.riskLevel === 'critical' ? 'bg-red-700' :
-                    gameState.politicalTrends.riskLevel === 'high' ? 'bg-orange-700' :
-                    gameState.politicalTrends.riskLevel === 'medium' ? 'bg-yellow-700' : 'bg-green-700'
-                  }`}>
-                    {
-                      gameState.politicalTrends.riskLevel === 'critical' ? '危機' :
-                      gameState.politicalTrends.riskLevel === 'high' ? '高リスク' :
-                      gameState.politicalTrends.riskLevel === 'medium' ? '中リスク' : '安定'
-                    }
-                  </span>
-                  <span className={`px-1 py-0.5 rounded text-xs ${
-                    gameState.politicalTrends.approvalTrend === 'rising' ? 'bg-green-700' :
-                    gameState.politicalTrends.approvalTrend === 'falling' ? 'bg-red-700' : 'bg-gray-700'
-                  }`}>
-                    支持率{
-                      gameState.politicalTrends.approvalTrend === 'rising' ? '↗' :
-                      gameState.politicalTrends.approvalTrend === 'falling' ? '↘' : '→'
-                    }
-                  </span>
+                  {!gameState.isAIThinking && (
+                    <>
+                      <span className={`px-1 py-0.5 rounded text-xs ${
+                        gameState.politicalTrends.riskLevel === 'critical' ? 'bg-red-700' :
+                        gameState.politicalTrends.riskLevel === 'high' ? 'bg-orange-700' :
+                        gameState.politicalTrends.riskLevel === 'medium' ? 'bg-yellow-700' : 'bg-green-700'
+                      }`}>
+                        {
+                          gameState.politicalTrends.riskLevel === 'critical' ? '危機' :
+                          gameState.politicalTrends.riskLevel === 'high' ? '高リスク' :
+                          gameState.politicalTrends.riskLevel === 'medium' ? '中リスク' : '安定'
+                        }
+                      </span>
+                      <span className={`px-1 py-0.5 rounded text-xs ${
+                        gameState.politicalTrends.approvalTrend === 'rising' ? 'bg-green-700' :
+                        gameState.politicalTrends.approvalTrend === 'falling' ? 'bg-red-700' : 'bg-gray-700'
+                      }`}>
+                        支持率{
+                          gameState.politicalTrends.approvalTrend === 'rising' ? '↗' :
+                          gameState.politicalTrends.approvalTrend === 'falling' ? '↘' : '→'
+                        }
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
-              <div className="text-xs text-indigo-100 min-h-[3rem]">
-                <p>
-                  {gameState.kasumiDisplayMessage || gameState.kasumiMessage}
-                  {gameState.isTyping && <span className="animate-pulse">|</span>}
-                </p>
+              <div className={`text-xs min-h-[3rem] transition-colors duration-300 ${
+                gameState.isAIThinking ? 'text-cyan-100' : 'text-indigo-100'
+              }`}>
+                {gameState.isAIThinking ? (
+                  <div className="flex items-center justify-center h-12">
+                    <div className="flex items-center animate-pulse">
+                      <span className="text-cyan-300">🧠</span>
+                      <span className="ml-2 text-cyan-300">政治情勢を詳細分析中...</span>
+                      <div className="ml-2 flex space-x-1">
+                        <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                        <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                        <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p>
+                    {gameState.kasumiDisplayMessage || gameState.kasumiMessage}
+                    {gameState.isTyping && <span className="animate-pulse">|</span>}
+                  </p>
+                )}
                 <div className="mt-2 text-xs text-indigo-300 opacity-70">
                   🤖 AI: {aiProvider.getProviderConfigs()[currentProvider].displayName}
                   {aiProvider.getProviderStatus().get(currentProvider)?.latency && (
