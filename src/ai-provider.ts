@@ -275,6 +275,49 @@ export class AIProviderManager {
         await this.initializeProviders();
     }
 
+    // 汎用コンテンツ生成
+    async generateContent(prompt: string): Promise<string> {
+        const startTime = Date.now();
+
+        try {
+            let result: string;
+
+            switch (this.currentProvider) {
+                case 'gemini':
+                    // Geminiの場合は既存のツンデレコメント生成APIを利用
+                    result = await this.secureClient.generateTsundereComment({}, prompt, {});
+                    break;
+
+                case 'ollama':
+                    // Ollamaの場合も同様
+                    result = await this.secureClient.generateOllamaTsundereComment({}, prompt, {});
+                    break;
+
+                case 'fallback':
+                default:
+                    result = this.getFallbackGenericComment(prompt);
+                    break;
+            }
+
+            const latency = Date.now() - startTime;
+            console.log(`⚡ ${this.currentProvider} コンテンツ生成時間: ${latency}ms`);
+
+            return result;
+
+        } catch (error) {
+            console.error(`❌ ${this.currentProvider} コンテンツ生成エラー:`, error);
+
+            // エラー時は自動的にフォールバックに切り替え
+            if (this.currentProvider !== 'fallback') {
+                console.log('🔄 フォールバックモードに自動切り替え');
+                this.currentProvider = 'fallback';
+                return this.getFallbackGenericComment(prompt);
+            }
+
+            return this.getFallbackGenericComment(prompt);
+        }
+    }
+
     // フォールバックコメント
     private getFallbackComment(effect: any): string {
         const approvalChange = effect.approvalRating || 0;
@@ -314,5 +357,18 @@ export class AIProviderManager {
             },
             reasoning: `政策「${policyChoice}」の分析を実行しました。現在はオフラインモードで動作しています。`
         };
+    }
+
+    // 汎用フォールバックコメント
+    private getFallbackGenericComment(prompt: string): string {
+        const genericComments = [
+            'べ、別にあなたの判断を信じてるわけじゃないんだからね！でも...慎重にね？',
+            'まったく、AI使えないなんて...でも、あなたならきっと大丈夫よ！',
+            'ふん！システムトラブルなんて...でも心配してないから！勝手にがんばりなさい！',
+            'もう、こんな時に限って...でも、総理なら乗り越えられるわよね？',
+            'システム調子悪いけど、別にあなたを応援してるわけじゃないからね！'
+        ];
+
+        return genericComments[Math.floor(Math.random() * genericComments.length)];
     }
 }

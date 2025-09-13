@@ -49,8 +49,7 @@ const RankingModal: React.FC<RankingModalProps> = ({ isOpen, onClose }) => {
     setError(null);
     
     try {
-      const baseURL = (import.meta.env as any).PROD ? '' : 'http://localhost:3001';
-      const response = await fetch(`${baseURL}/api/get-rankings?limit=20`);
+      const response = await fetch(`/api/get-rankings?limit=20`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch rankings: ${response.status}`);

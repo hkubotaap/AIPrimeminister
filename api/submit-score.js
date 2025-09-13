@@ -1,8 +1,12 @@
-// Vercel Function: スコア登録
+// Vercel Function: スコア登録 (Supabase対応)
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
-// シンプルなインメモリランキング（本番では外部DBを推奨）
-let rankings = [];
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+// フォールバック用インメモリランキング
+let fallbackRankings = [];
 
 export default async function handler(req, res) {
   // CORS設定
@@ -18,6 +22,12 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Supabaseクライアント初期化
+  let supabase = null;
+  if (supabaseUrl && supabaseKey) {
+    supabase = createClient(supabaseUrl, supabaseKey);
   }
 
   try {
@@ -50,48 +60,114 @@ export default async function handler(req, res) {
     // 現在時刻
     const timestamp = new Date().toISOString();
 
+    // ランクタイトル計算
+    const getRankTitle = (score) => {
+      if (score >= 90) return { title: 'S+', label: '歴史的名宰相' };
+      if (score >= 85) return { title: 'S', label: '優秀な指導者' };
+      if (score >= 80) return { title: 'A+', label: '有能な総理大臣' };
+      if (score >= 75) return { title: 'A', label: '安定した政権運営' };
+      if (score >= 70) return { title: 'B+', label: '平均以上の成果' };
+      if (score >= 65) return { title: 'B', label: '標準的な政権' };
+      if (score >= 60) return { title: 'C+', label: '課題の多い政権' };
+      if (score >= 55) return { title: 'C', label: '困難な政権運営' };
+      if (score >= 50) return { title: 'D', label: '政治的混乱' };
+      return { title: 'F', label: '政治的失敗' };
+    };
+
+    const rankTitle = getRankTitle(totalScore);
+
     // ランキングエントリー作成
     const rankingEntry = {
       id: playerId,
       playerName: sanitizedName,
-      totalScore: Math.round(totalScore * 100) / 100, // 小数点2桁まで
+      totalScore: Math.round(totalScore * 100) / 100,
       timestamp,
+      rankTitle,
       gameData: {
-        finalTurn: gameData?.turn || 0,
-        approvalRating: gameData?.approvalRating || 0,
-        gdp: gameData?.gdp || 0,
-        nationalDebt: gameData?.nationalDebt || 0,
-        rank: gameData?.rank || 'F'
+        finalTurn: gameData?.turn || 5,
+        approvalRating: gameData?.approvalRating || 50,
+        gdp: gameData?.gdp || 540,
+        nationalDebt: gameData?.nationalDebt || 1100,
+        diplomacy: gameData?.diplomacy || 55,
+        environment: gameData?.environment || 50,
+        technology: gameData?.technology || 60,
+        rank: gameData?.rank || rankTitle.title
       }
     };
 
-    // ランキングに追加
-    rankings.push(rankingEntry);
+    if (supabase) {
+      // Supabaseに保存
+      const { data, error } = await supabase
+        .from('prime_minister_rankings')
+        .insert([{
+          player_name: sanitizedName,
+          total_score: rankingEntry.totalScore,
+          rank_title: rankTitle,
+          final_turn: rankingEntry.gameData.finalTurn,
+          approval_rating: rankingEntry.gameData.approvalRating,
+          gdp: rankingEntry.gameData.gdp,
+          national_debt: rankingEntry.gameData.nationalDebt,
+          diplomacy: rankingEntry.gameData.diplomacy,
+          environment: rankingEntry.gameData.environment,
+          technology: rankingEntry.gameData.technology,
+          created_at: timestamp
+        }])
+        .select()
+        .single();
 
-    // スコアでソート（降順）
-    rankings.sort((a, b) => b.totalScore - a.totalScore);
-
-    // 上位100位まで保持
-    if (rankings.length > 100) {
-      rankings = rankings.slice(0, 100);
-    }
-
-    // プレイヤーの順位を計算
-    const playerRank = rankings.findIndex(entry => entry.id === playerId) + 1;
-
-    console.log(`🏆 新しいスコア登録: ${sanitizedName} - ${totalScore}点 (${playerRank}位)`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Score submitted successfully',
-      data: {
-        playerId,
-        playerName: sanitizedName,
-        totalScore: rankingEntry.totalScore,
-        rank: playerRank,
-        totalPlayers: rankings.length
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw new Error(`Database error: ${error.message}`);
       }
-    });
+
+      // 順位計算
+      const { data: rankings, error: rankError } = await supabase
+        .from('prime_minister_rankings')
+        .select('total_score')
+        .order('total_score', { ascending: false });
+
+      const rank = rankings ? rankings.findIndex(r => r.total_score <= totalScore) + 1 : 1;
+      const totalPlayers = rankings ? rankings.length : 1;
+
+      console.log(`🏆 スコア登録成功 (Supabase): ${sanitizedName} - ${totalScore}点 (${rank}位/${totalPlayers}人中)`);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Score submitted successfully',
+        data: {
+          playerId,
+          playerName: sanitizedName,
+          totalScore: rankingEntry.totalScore,
+          rank,
+          totalPlayers,
+          rankTitle
+        }
+      });
+    } else {
+      // フォールバック: インメモリストレージ
+      fallbackRankings.push(rankingEntry);
+      fallbackRankings.sort((a, b) => b.totalScore - a.totalScore);
+      if (fallbackRankings.length > 100) {
+        fallbackRankings = fallbackRankings.slice(0, 100);
+      }
+
+      const playerRank = fallbackRankings.findIndex(entry => entry.id === playerId) + 1;
+
+      console.log(`🏆 スコア登録 (フォールバック): ${sanitizedName} - ${totalScore}点 (${playerRank}位)`);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Score submitted successfully (fallback mode)',
+        data: {
+          playerId,
+          playerName: sanitizedName,
+          totalScore: rankingEntry.totalScore,
+          rank: playerRank,
+          totalPlayers: fallbackRankings.length,
+          rankTitle
+        }
+      });
+    }
 
   } catch (error) {
     console.error('スコア登録エラー:', error);

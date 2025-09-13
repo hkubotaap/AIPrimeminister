@@ -45,8 +45,7 @@ const ScoreSubmissionModal: React.FC<ScoreSubmissionModalProps> = ({
     setError(null);
 
     try {
-      const baseURL = (import.meta.env as any).PROD ? '' : 'http://localhost:3001';
-      const response = await fetch(`${baseURL}/api/submit-score`, {
+      const response = await fetch(`/api/submit-score`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +79,7 @@ const ScoreSubmissionModal: React.FC<ScoreSubmissionModalProps> = ({
       }
     } catch (error) {
       console.error('スコア登録エラー:', error);
-      setError(`登録に失敗しました: ${error.message}`);
+      setError(`登録に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -143,10 +142,6 @@ const ScoreSubmissionModal: React.FC<ScoreSubmissionModalProps> = ({
               </div>
               
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-indigo-800/50 rounded p-2">
-                  <div className="text-gray-300">ターン</div>
-                  <div className="text-white font-bold">{gameState.turn}</div>
-                </div>
                 <div className="bg-purple-800/50 rounded p-2">
                   <div className="text-gray-300">支持率</div>
                   <div className="text-white font-bold">{gameState.approvalRating}%</div>
@@ -156,8 +151,12 @@ const ScoreSubmissionModal: React.FC<ScoreSubmissionModalProps> = ({
                   <div className="text-white font-bold">{gameState.gdp}兆円</div>
                 </div>
                 <div className="bg-red-800/50 rounded p-2">
-                  <div className="text-gray-300">株価</div>
-                  <div className="text-white font-bold">{gameState.stockPrice}円</div>
+                  <div className="text-gray-300">外交</div>
+                  <div className="text-white font-bold">{gameState.diplomacy}</div>
+                </div>
+                <div className="bg-green-800/50 rounded p-2">
+                  <div className="text-gray-300">環境</div>
+                  <div className="text-white font-bold">{gameState.environment}</div>
                 </div>
               </div>
             </div>
