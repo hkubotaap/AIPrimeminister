@@ -19,6 +19,7 @@ export class SecureAPIClient {
         
         console.log('🔒 Secure API Client initialized');
         console.log('📡 Base URL:', this.baseURL);
+        console.log('🌍 Environment:', (import.meta.env as any).PROD ? 'Production' : 'Development');
     }
 
     // ツンデレコメント生成（サーバーサイドプロキシ経由）
