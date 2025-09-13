@@ -2,7 +2,7 @@
 import { SecureAPIClient } from './api-client';
 import { OllamaAPI } from './ollama-api';
 
-export type AIProvider = 'gemini' | 'ollama' | 'fallback';
+export type AIProvider = 'gemini' | 'ollama' | 'fallback' | 'offline';
 
 export interface AIProviderConfig {
     name: string;
@@ -58,9 +58,17 @@ export class AIProviderManager {
             },
             fallback: {
                 name: 'fallback',
-                displayName: 'オフライン',
-                description: 'インターネット不要のフォールバックモード',
+                displayName: 'フォールバック',
+                description: 'エラー時の緊急フォールバックモード',
                 icon: '🔄',
+                available: true,
+                requiresSetup: false
+            },
+            offline: {
+                name: 'offline',
+                displayName: 'オフライン',
+                description: 'インターネット不要の完全オフラインモード',
+                icon: '📱',
                 available: true,
                 requiresSetup: false
             }
