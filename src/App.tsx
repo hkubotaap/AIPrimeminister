@@ -1084,14 +1084,8 @@ export default function App() {
   // プロバイダー設定の初期化
   React.useEffect(() => {
     const initProvider = async () => {
-      // 本番環境では自動的にオフラインモードに設定
-      if ((import.meta.env as any).PROD) {
-        setCurrentProvider('offline');
-        console.log('🌐 本番環境: オフラインモードに設定');
-      } else {
-        await aiProvider.recheckProviders();
-        setCurrentProvider(aiProvider.getCurrentProvider());
-      }
+      await aiProvider.recheckProviders();
+      setCurrentProvider(aiProvider.getCurrentProvider());
     };
     initProvider();
   }, []);
