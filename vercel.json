@@ -3,14 +3,13 @@
   "builds": [
     {
       "src": "package.json",
+      "use": "@vercel/static-build"
+    },
+    {
+      "src": "server/server.js",
       "use": "@vercel/node"
     }
   ],
-  "functions": {
-    "server/server.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
