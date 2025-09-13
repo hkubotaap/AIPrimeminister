@@ -2,6 +2,7 @@ import { useState } from 'react';
 import React from 'react';
 import { AIProviderManager, AIProvider } from './ai-provider';
 import { PolicyAnalyzer, PolicyContext } from './policy-analyzer';
+import { EventGenerator, EventGenerationContext, GeneratedEvent } from './event-generator';
 import { SecurityValidator } from './security-config';
 
 // ポリシー効果の型
@@ -340,54 +341,97 @@ export default function App() {
     return Math.random() < 0.2;
   };
 
-  // ランダムにイベントを取得（緊急イベント含む）
-  const getRandomEvent = (): GameEvent => {
-    console.log('使用済みイベントID:', gameState.usedEventIds);
+  // AI駆動イベント生成
+  const generateAIEvent = async (): Promise<GameEvent> => {
+    console.log('🎲 AI駆動イベント生成開始');
+    setIsGeneratingEvent(true);
     
-    // 緊急イベントの判定
-    if (shouldTriggerEmergencyEvent() && gameState.turn > 1) {
-      const availableEmergencyEvents = emergencyEventTemplates.filter(template => 
-        !gameState.usedEventIds.includes(template.id)
-      );
+    try {
+      // 現在の季節を取得
+      const currentDate = new Date();
+      const month = currentDate.getMonth();
+      const currentSeason = month < 3 ? 'winter' : month < 6 ? 'spring' : month < 9 ? 'summer' : 'autumn';
       
-      console.log('利用可能な緊急イベント:', availableEmergencyEvents.map(e => e.id));
+      // ゲームフェーズを判定
+      const gamePhase = gameState.turn <= 2 ? 'early' : gameState.turn <= 4 ? 'middle' : 'late';
       
-      if (availableEmergencyEvents.length > 0) {
-        const shuffled = shuffleArray(availableEmergencyEvents);
-        const selected = shuffled[0];
-        
-        console.log('選択された緊急イベント:', selected.id);
-        
-        // 緊急イベント発生をKASUMIに通知
+      // グローバルコンテキストを生成
+      const globalContext = {
+        economicClimate: gameState.politicalTrends.economicTrend === 'recession' ? 'crisis' : 
+                        gameState.politicalTrends.economicTrend === 'growth' ? 'stable' : 'volatile',
+        internationalTensions: gameState.diplomacy < 40 ? 'high' : gameState.diplomacy < 70 ? 'medium' : 'low',
+        domesticPressure: gameState.approvalRating < 30 ? 'high' : gameState.approvalRating < 60 ? 'medium' : 'low'
+      };
+
+      const eventContext: EventGenerationContext = {
+        currentState: {
+          turn: gameState.turn,
+          maxTurns: gameState.maxTurns,
+          approvalRating: gameState.approvalRating,
+          gdp: gameState.gdp,
+          nationalDebt: gameState.nationalDebt,
+          technology: gameState.technology,
+          environment: gameState.environment,
+          stockPrice: gameState.stockPrice,
+          usdJpyRate: gameState.usdJpyRate,
+          diplomacy: gameState.diplomacy,
+        },
+        politicalTrends: gameState.politicalTrends,
+        previousEvents: gameState.gameLog.map(log => log.event),
+        previousChoices: gameState.gameLog.map(log => log.choice),
+        usedEventIds: gameState.usedEventIds,
+        gamePhase: gamePhase as 'early' | 'middle' | 'late',
+        currentSeason: currentSeason as 'spring' | 'summer' | 'autumn' | 'winter',
+        globalContext
+      };
+
+      const generatedEvent = await eventGenerator.generateEvent(eventContext);
+      console.log('✅ AI駆動イベント生成完了:', generatedEvent.title);
+      
+      setIsGeneratingEvent(false);
+
+      // 緊急イベントの場合はKASUMIに通知
+      if (generatedEvent.urgency === 'critical') {
         setTimeout(() => {
           displayMessage('きゃー！緊急事態よ！総理、しっかりして！私が付いてるから大丈夫...大丈夫よね？');
         }, 500);
-        
-        return {
-          id: selected.id,
-          title: selected.title,
-          description: selected.description,
-          options: selected.options
-        };
       }
+
+      // GeneratedEventをGameEventに変換
+      return {
+        id: generatedEvent.id,
+        title: generatedEvent.title,
+        description: generatedEvent.description,
+        options: generatedEvent.options.map(option => ({
+          text: option.text,
+          effect: option.expectedEffects
+        }))
+      };
+
+    } catch (error) {
+      console.error('❌ AI駆動イベント生成エラー:', error);
+      setIsGeneratingEvent(false);
+      
+      // エラー時は従来のフォールバックイベントを使用
+      return generateFallbackEvent();
     }
+  };
+
+  // 従来のランダムイベント取得（フォールバック用）
+  const getRandomEvent = (): GameEvent => {
+    console.log('🔄 フォールバックイベント生成');
     
     // 通常イベント
     const availableEvents = eventTemplates.filter(template => 
       !gameState.usedEventIds.includes(template.id)
     );
     
-    console.log('利用可能な通常イベント:', availableEvents.map(e => e.id));
-    
     if (availableEvents.length === 0) {
-      console.log('フォールバックイベントを使用');
       return generateFallbackEvent();
     }
     
     const shuffled = shuffleArray(availableEvents);
     const selected = shuffled[0];
-    
-    console.log('選択された通常イベント:', selected.id);
     
     return {
       id: selected.id,
@@ -434,9 +478,11 @@ export default function App() {
   // AI Provider Managerインスタンス
   const [aiProvider] = useState(() => new AIProviderManager());
   const [policyAnalyzer] = useState(() => new PolicyAnalyzer(aiProvider));
+  const [eventGenerator] = useState(() => new EventGenerator(aiProvider));
   const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
   const [isAnalyzingPolicy, setIsAnalyzingPolicy] = useState(false);
+  const [isGeneratingEvent, setIsGeneratingEvent] = useState(false);
 
   // ツンデレAI政治秘書KASUMIの分析コメント（Claude API使用）
   const getAISecretaryAnalysis = async (effect: PolicyEffect, policyChoice: string): Promise<string> => {
@@ -580,14 +626,31 @@ export default function App() {
   };
 
   // ゲーム開始
-  const startGame = () => {
-    const firstEvent = getRandomEvent();
-    setGameState(prev => ({ ...prev, isGameStarted: true, turn: 1, currentEvent: firstEvent }));
+  // AI駆動ゲーム開始
+  const startGame = async () => {
+    console.log('🎮 AI駆動ゲーム開始');
+    setIsGeneratingEvent(true);
     
-    // 開始時のKASUMIメッセージを表示
-    setTimeout(() => {
-      displayMessage('総理、いよいよ政権運営の始まりね！私がしっかりサポートするから...べ、別に心配してるわけじゃないのよ？頑張りましょ！');
-    }, 1000);
+    try {
+      const firstEvent = await generateAIEvent();
+      setGameState(prev => ({ ...prev, isGameStarted: true, turn: 1, currentEvent: firstEvent }));
+      
+      // 開始時のKASUMIメッセージを表示
+      setTimeout(() => {
+        displayMessage('総理、いよいよ政権運営の始まりね！私がしっかりサポートするから...べ、別に心配してるわけじゃないのよ？頑張りましょ！');
+      }, 1000);
+    } catch (error) {
+      console.error('❌ ゲーム開始エラー:', error);
+      // エラー時は従来の方法でゲーム開始
+      const firstEvent = getRandomEvent();
+      setGameState(prev => ({ ...prev, isGameStarted: true, turn: 1, currentEvent: firstEvent }));
+      
+      setTimeout(() => {
+        displayMessage('総理、ゲームを開始します！何か問題が発生しましたが、私が付いてるから大丈夫よ！');
+      }, 1000);
+    }
+    
+    setIsGeneratingEvent(false);
   };
 
   // 政策選択ハンドラ
@@ -710,11 +773,27 @@ export default function App() {
           setFinalScore(score);
         } else {
           next.turn += 1;
-          next.currentEvent = getRandomEvent();
+          // 次のイベントは非同期で生成するため、一時的にnullに設定
+          next.currentEvent = null;
         }
         return next;
+        return next;
       });
-      setIsProcessing(false);
+      
+      // 次ターンがある場合は新しいイベントを生成
+      if (gameState.turn + 1 <= gameState.maxTurns) {
+        generateAIEvent().then(nextEvent => {
+          setGameState(prev => ({ ...prev, currentEvent: nextEvent }));
+          setIsProcessing(false);
+        }).catch(error => {
+          console.error('❌ 次イベント生成エラー:', error);
+          const fallbackEvent = getRandomEvent();
+          setGameState(prev => ({ ...prev, currentEvent: fallbackEvent }));
+          setIsProcessing(false);
+        });
+      } else {
+        setIsProcessing(false);
+      }
     }, 500);
 
     } catch (error) {
@@ -788,10 +867,18 @@ export default function App() {
             setFinalScore(score);
           } else {
             next.turn += 1;
-            next.currentEvent = getRandomEvent();
+            // 次のイベントは非同期で生成するため、一時的にnullに設定
+            next.currentEvent = null;
           }
           return next;
         });
+        
+        // 次ターンがある場合は新しいイベントを生成（エラー時はフォールバック）
+        if (gameState.turn + 1 <= gameState.maxTurns) {
+          const nextEvent = getRandomEvent();
+          setGameState(prev => ({ ...prev, currentEvent: nextEvent }));
+        }
+        
         setIsProcessing(false);
       }, 800);
     }
@@ -1139,9 +1226,17 @@ export default function App() {
           
           <button
             onClick={startGame}
-            className="px-8 py-3 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white text-xl"
+            disabled={isGeneratingEvent}
+            className="px-8 py-3 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-white text-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ゲームスタート
+            {isGeneratingEvent ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin">🎲</span>
+                AIイベント生成中...
+              </span>
+            ) : (
+              'ゲームスタート'
+            )}
           </button>
         </div>
       </div>
@@ -1468,11 +1563,36 @@ export default function App() {
           {/* 中央: イベントと選択肢 */}
           <div className="lg:col-span-2">
             <div className="bg-gray-800 rounded-lg p-4 mb-4">
-              <h3 className="text-xl font-semibold mb-3">{gameState.currentEvent?.title}</h3>
-              <p className="mb-4 text-gray-300 text-sm leading-relaxed">{gameState.currentEvent?.description}</p>
+              {isGeneratingEvent ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin text-4xl mb-4">🎲</div>
+                  <h3 className="text-xl font-semibold mb-2">AIが新しい政治課題を生成中...</h3>
+                  <p className="text-gray-400 text-sm">現在の政治情勢を分析して、リアルなイベントを作成しています</p>
+                  <div className="mt-4 text-xs text-cyan-300">
+                    🤖 AI: {aiProvider.getProviderConfigs()[currentProvider].displayName}
+                  </div>
+                </div>
+              ) : gameState.currentEvent ? (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xl font-semibold">{gameState.currentEvent.title}</h3>
+                    <span className="text-xs bg-purple-800 px-2 py-1 rounded">
+                      🤖 AI生成
+                    </span>
+                  </div>
+                  <p className="mb-4 text-gray-300 text-sm leading-relaxed">{gameState.currentEvent.description}</p>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">⏳</div>
+                  <h3 className="text-xl font-semibold mb-2">次の政治課題を準備中...</h3>
+                  <p className="text-gray-400 text-sm">しばらくお待ちください</p>
+                </div>
+              )}
               
-              <div className="space-y-2">
-                {gameState.currentEvent?.options.map((opt, idx) => (
+              {!isGeneratingEvent && gameState.currentEvent && (
+                <div className="space-y-2">
+                  {gameState.currentEvent.options.map((opt, idx) => (
                   <button
                     key={idx}
                     onClick={() => handlePolicyChoice(opt)}
@@ -1488,11 +1608,13 @@ export default function App() {
                       )}
                     </div>
                   </button>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
               
               {/* カスタム政策入力 */}
-              <div className="mt-4 border-t border-gray-600 pt-3">
+              {!isGeneratingEvent && gameState.currentEvent && (
+                <div className="mt-4 border-t border-gray-600 pt-3">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -1509,7 +1631,8 @@ export default function App() {
                     提出
                   </button>
                 </div>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* 政策効果の詳細表示 */}

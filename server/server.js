@@ -688,6 +688,272 @@ app.post('/api/ollama/analyze-policy-effects', validateInput, async (req, res) =
   }
 });
 
+// Gemini政治イベント生成エンドポイント
+app.post('/api/generate-political-event', validateInput, async (req, res) => {
+  try {
+    const { prompt, context } = req.body;
+    
+    console.log('📰 Gemini政治イベント生成リクエスト受信');
+    console.log('ゲームフェーズ:', context.gamePhase);
+    console.log('リスクレベル:', context.politicalTrends?.riskLevel);
+    
+    const response = await fetch(`${GEMINI_BASE_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.8, // イベント生成は創造性を重視
+          topK: 40,
+          topP: 0.9,
+          maxOutputTokens: 2000,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Gemini API Error:', response.status, errorText);
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.candidates[0]?.content?.parts[0]?.text || '';
+
+    // JSONレスポンスをパース
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const event = JSON.parse(jsonMatch[0]);
+        console.log('✅ Gemini政治イベント生成成功');
+        console.log('生成イベント:', event.title);
+        
+        res.json({
+          success: true,
+          event: event,
+          provider: 'gemini',
+          timestamp: new Date().toISOString()
+        });
+      } catch (parseError) {
+        console.error('❌ JSON解析エラー:', parseError);
+        throw new Error('Invalid JSON response from Gemini');
+      }
+    } else {
+      throw new Error('No valid JSON found in Gemini response');
+    }
+    
+  } catch (error) {
+    console.error('❌ Gemini政治イベント生成エラー:', error);
+    
+    // フォールバックイベント
+    const fallbackEvent = {
+      id: `fallback_${Date.now()}`,
+      title: '新たな政治課題の浮上',
+      description: '予期せぬ政治課題が浮上しました。現在の政治情勢を踏まえた適切な対応が求められています。',
+      category: 'general',
+      urgency: 'medium',
+      complexity: 'moderate',
+      options: [
+        {
+          text: '積極的な政策展開を行う',
+          type: 'progressive',
+          expectedEffects: {
+            approvalRating: Math.floor(Math.random() * 16) + 5,
+            gdp: Math.floor(Math.random() * 21) - 5,
+            nationalDebt: Math.floor(Math.random() * 81) + 20,
+            technology: Math.floor(Math.random() * 11) + 2,
+            environment: Math.floor(Math.random() * 11) - 2,
+            stockPrice: Math.floor(Math.random() * 601) + 100,
+            usdJpyRate: Math.floor(Math.random() * 7) - 3,
+            diplomacy: Math.floor(Math.random() * 11) + 2
+          }
+        },
+        {
+          text: '慎重な段階的対応を取る',
+          type: 'conservative',
+          expectedEffects: {
+            approvalRating: Math.floor(Math.random() * 11) + 2,
+            gdp: Math.floor(Math.random() * 11) - 2,
+            nationalDebt: Math.floor(Math.random() * 31) + 5,
+            technology: Math.floor(Math.random() * 7) - 1,
+            environment: Math.floor(Math.random() * 7) - 1,
+            stockPrice: Math.floor(Math.random() * 301) - 100,
+            usdJpyRate: Math.floor(Math.random() * 5) - 2,
+            diplomacy: Math.floor(Math.random() * 7) - 1
+          }
+        },
+        {
+          text: '関係者との協議を重視',
+          type: 'moderate',
+          expectedEffects: {
+            approvalRating: Math.floor(Math.random() * 13) + 3,
+            gdp: Math.floor(Math.random() * 15) - 3,
+            nationalDebt: Math.floor(Math.random() * 51) + 10,
+            technology: Math.floor(Math.random() * 9) + 1,
+            environment: Math.floor(Math.random() * 9) + 1,
+            stockPrice: Math.floor(Math.random() * 401) - 50,
+            usdJpyRate: Math.floor(Math.random() * 6) - 2,
+            diplomacy: Math.floor(Math.random() * 9) + 1
+          }
+        }
+      ],
+      backgroundInfo: '現在の政治情勢を踏まえた重要な課題です。',
+      stakeholders: ['政府', '国民', '関係団体'],
+      timeConstraint: '適切なタイミングで',
+      generationReason: 'フォールバックイベントとして生成'
+    };
+    
+    res.json({
+      success: true,
+      event: fallbackEvent,
+      provider: 'gemini',
+      fallback: true,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Ollama政治イベント生成エンドポイント
+app.post('/api/ollama/generate-political-event', validateInput, async (req, res) => {
+  try {
+    const { prompt, context } = req.body;
+    
+    console.log('🦙 Ollama政治イベント生成リクエスト受信');
+    console.log('ゲームフェーズ:', context.gamePhase);
+    
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: 0.8, // イベント生成は創造性を重視
+          top_p: 0.9,
+          top_k: 40,
+          num_predict: 1200,
+          stop: ['\n\n注意:', '\n\n例:', '説明:']
+        }
+      }),
+      signal: AbortSignal.timeout(60000) // イベント生成は時間がかかる可能性
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Ollama API Error:', response.status, errorText);
+      throw new Error(`Ollama API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.response?.trim() || '';
+    
+    // JSONレスポンスをパース
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const event = JSON.parse(jsonMatch[0]);
+        console.log('✅ Ollama政治イベント生成成功');
+        console.log('生成イベント:', event.title);
+        console.log('生成時間:', data.total_duration ? `${Math.round(data.total_duration / 1000000)}ms` : 'N/A');
+        
+        res.json({
+          success: true,
+          event: event,
+          provider: 'ollama',
+          model: OLLAMA_MODEL,
+          generation_time: data.total_duration ? Math.round(data.total_duration / 1000000) : null,
+          timestamp: new Date().toISOString()
+        });
+      } catch (parseError) {
+        console.error('❌ JSON解析エラー:', parseError);
+        throw new Error('Invalid JSON response from Ollama');
+      }
+    } else {
+      throw new Error('No valid JSON found in Ollama response');
+    }
+    
+  } catch (error) {
+    console.error('❌ Ollama政治イベント生成エラー:', error);
+    
+    // フォールバックイベント
+    const fallbackEvent = {
+      id: `ollama_fallback_${Date.now()}`,
+      title: '地域からの政策要望',
+      description: '地方自治体や市民団体から新たな政策要望が寄せられています。地域の声と国政のバランスを取る必要があります。',
+      category: 'social',
+      urgency: 'medium',
+      complexity: 'moderate',
+      options: [
+        {
+          text: '要望を積極的に政策に反映',
+          type: 'progressive',
+          expectedEffects: {
+            approvalRating: Math.floor(Math.random() * 16) + 8,
+            gdp: Math.floor(Math.random() * 21) - 3,
+            nationalDebt: Math.floor(Math.random() * 71) + 30,
+            technology: Math.floor(Math.random() * 9) + 1,
+            environment: Math.floor(Math.random() * 9) + 1,
+            stockPrice: Math.floor(Math.random() * 401) + 50,
+            usdJpyRate: Math.floor(Math.random() * 5) - 2,
+            diplomacy: Math.floor(Math.random() * 7) + 2
+          }
+        },
+        {
+          text: '既存制度の範囲内で対応',
+          type: 'conservative',
+          expectedEffects: {
+            approvalRating: Math.floor(Math.random() * 11) + 3,
+            gdp: Math.floor(Math.random() * 11) - 1,
+            nationalDebt: Math.floor(Math.random() * 21) + 5,
+            technology: Math.floor(Math.random() * 5) + 1,
+            environment: Math.floor(Math.random() * 5) + 1,
+            stockPrice: Math.floor(Math.random() * 201) + 50,
+            usdJpyRate: Math.floor(Math.random() * 3) - 1,
+            diplomacy: Math.floor(Math.random() * 5) + 1
+          }
+        },
+        {
+          text: '関係者と協議して段階的に実施',
+          type: 'moderate',
+          expectedEffects: {
+            approvalRating: Math.floor(Math.random() * 13) + 5,
+            gdp: Math.floor(Math.random() * 15) - 2,
+            nationalDebt: Math.floor(Math.random() * 41) + 15,
+            technology: Math.floor(Math.random() * 7) + 1,
+            environment: Math.floor(Math.random() * 7) + 1,
+            stockPrice: Math.floor(Math.random() * 301) + 25,
+            usdJpyRate: Math.floor(Math.random() * 4) - 1,
+            diplomacy: Math.floor(Math.random() * 7) + 1
+          }
+        }
+      ],
+      backgroundInfo: '地域の声を政策に反映することが求められています。',
+      stakeholders: ['地方自治体', '市民団体', '政府', '国民'],
+      timeConstraint: '1ヶ月以内',
+      generationReason: 'Ollamaフォールバックイベントとして生成'
+    };
+    
+    res.json({
+      success: true,
+      event: fallbackEvent,
+      provider: 'ollama',
+      fallback: true,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // エラーハンドリング
 app.use((err, req, res, next) => {
   console.error('❌ Server Error:', err);

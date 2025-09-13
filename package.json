@@ -1,13 +1,15 @@
 {
   "name": "ai-prime-minister-simulator",
   "version": "2.0.0",
+  "type": "module",
   "description": "Complete AI-Driven Prime Minister Simulator Game with Claude Integration",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "start": "vite"
+    "start": "vite",
+    "vercel-build": "npm install && npm run build"
   },
   "dependencies": {
     "react": "^18.2.0",

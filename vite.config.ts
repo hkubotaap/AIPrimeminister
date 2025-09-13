@@ -8,7 +8,9 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.NODE_ENV === 'production' 
+          ? 'https://your-api-domain.vercel.app'
+          : 'http://localhost:3001',
         changeOrigin: true,
         secure: false
       }
