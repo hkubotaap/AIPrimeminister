@@ -357,10 +357,10 @@ export default function App() {
       
       // グローバルコンテキストを生成
       const globalContext = {
-        economicClimate: gameState.politicalTrends.economicTrend === 'recession' ? 'crisis' : 
-                        gameState.politicalTrends.economicTrend === 'growth' ? 'stable' : 'volatile',
-        internationalTensions: gameState.diplomacy < 40 ? 'high' : gameState.diplomacy < 70 ? 'medium' : 'low',
-        domesticPressure: gameState.approvalRating < 30 ? 'high' : gameState.approvalRating < 60 ? 'medium' : 'low'
+        economicClimate: (gameState.politicalTrends.economicTrend === 'recession' ? 'crisis' : 
+                        gameState.politicalTrends.economicTrend === 'growth' ? 'stable' : 'volatile') as 'stable' | 'volatile' | 'crisis',
+        internationalTensions: (gameState.diplomacy < 40 ? 'high' : gameState.diplomacy < 70 ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+        domesticPressure: (gameState.approvalRating < 30 ? 'high' : gameState.approvalRating < 60 ? 'medium' : 'low') as 'low' | 'medium' | 'high'
       };
 
       const eventContext: EventGenerationContext = {
@@ -854,9 +854,9 @@ export default function App() {
           getAISecretaryAnalysis(eff, option.text).then(analysisMessage => {
             next.kasumiMessage = analysisMessage;
             
-            // タイプライター効果でメッセージを表示
+            // メッセージを即座に表示
             setTimeout(() => {
-              typewriterEffect(analysisMessage);
+              displayMessage(analysisMessage);
             }, 1000);
           });
           
@@ -1110,6 +1110,7 @@ export default function App() {
       kasumiMessage: '総理、お疲れ様です。政治情勢の分析を開始いたします。',
       kasumiDisplayMessage: '',
       isTyping: false,
+      isAIThinking: false,
       typingTimer: null,
       emergencyEventCount: 0,
       lastEffect: null,

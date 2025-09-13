@@ -341,7 +341,7 @@ JSONのみを返してください：`;
 
   // 政策効果の詳細説明生成
   async generateEffectExplanation(analysis: PolicyEffectAnalysis, context: PolicyContext): Promise<string> {
-    const significantEffects = [];
+    const significantEffects: string[] = [];
     
     Object.entries(analysis.effects).forEach(([key, value]) => {
       if (Math.abs(value) >= 5) {
