@@ -4,6 +4,8 @@ import { AIProviderManager, AIProvider } from './ai-provider';
 import { PolicyAnalyzer, PolicyContext } from './policy-analyzer';
 import { EventGenerator, EventGenerationContext, GeneratedEvent } from './event-generator';
 import { SecurityValidator } from './security-config';
+import RankingModal from './components/RankingModal';
+import ScoreSubmissionModal from './components/ScoreSubmissionModal';
 
 // ポリシー効果の型
 interface PolicyEffect {
@@ -291,6 +293,11 @@ function App() {
   const [, setFinalScore] = useState(0);
   const [secretaryComment, setSecretaryComment] = useState<string>('');
   const [isGeneratingComment, setIsGeneratingComment] = useState(false);
+  
+  // ランキング機能用のstate
+  const [showRankingModal, setShowRankingModal] = useState(false);
+  const [showScoreSubmissionModal, setShowScoreSubmissionModal] = useState(false);
+  const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
 
   // ゲーム終了時の総括評価生成
   React.useEffect(() => {
@@ -1139,7 +1146,15 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white flex items-center justify-center p-4">
         <div className="text-center max-w-2xl">
-          <h1 className="text-4xl font-bold mb-6">🏛️ AI総理大臣シミュレーター</h1>
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <h1 className="text-4xl font-bold">🏛️ AI総理大臣シミュレーター</h1>
+            <button
+              onClick={() => setShowRankingModal(true)}
+              className="px-3 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-lg text-sm font-bold text-white shadow-lg transition-all duration-200 hover:scale-105"
+            >
+              🏆 ランキング
+            </button>
+          </div>
           <p className="mb-4 text-gray-300">現代日本の政治課題に挑戦しよう</p>
           <p className="mb-6 text-sm text-cyan-300">📊 現実的な政策シミュレーション</p>
           
@@ -1399,7 +1414,21 @@ function App() {
             </div>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => setShowScoreSubmissionModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-lg text-white font-bold shadow-lg transition-all duration-200 hover:scale-105"
+              >
+                🏆 ランキングに登録
+              </button>
+              <button
+                onClick={() => setShowRankingModal(true)}
+                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 rounded-lg text-white font-bold shadow-lg transition-all duration-200 hover:scale-105"
+              >
+                📊 ランキング表示
+              </button>
+            </div>
             <button
               onClick={resetGame}
               className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg text-white font-semibold"
@@ -1730,6 +1759,22 @@ function App() {
         </div>
       </div>
     </div>
+    
+    {/* ランキングモーダル */}
+    <RankingModal 
+      isOpen={showRankingModal}
+      onClose={() => setShowRankingModal(false)}
+    />
+    
+    {/* スコア登録モーダル */}
+    <ScoreSubmissionModal
+      isOpen={showScoreSubmissionModal}
+      onClose={() => setShowScoreSubmissionModal(false)}
+      gameState={gameState}
+      totalScore={calculateFinalRank().score}
+      rank={calculateFinalRank().rank}
+    />
+    </>
   );
 }
 
