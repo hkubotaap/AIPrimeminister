@@ -253,7 +253,7 @@ const emergencyEventTemplates: EventTemplate[] = [
   },
 ];
 
-export default function App() {
+function App() {
   const [gameState, setGameState] = useState<GameState>({
     turn: 0,
     maxTurns: 6,
