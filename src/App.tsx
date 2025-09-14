@@ -392,8 +392,13 @@ function App() {
         globalContext
       };
 
+      const startTime = performance.now();
       const generatedEvent = await eventGenerator.generateEvent(eventContext);
-      console.log('✅ AI駆動イベント生成完了:', generatedEvent.title);
+      const endTime = performance.now();
+      const responseTime = Math.round(endTime - startTime);
+      const providerName = aiProvider.getProviderConfigs()[currentProvider].displayName;
+
+      console.log('✅ AI駆動イベント生成完了:', generatedEvent.title, `(${responseTime}ms)`);
       
       setIsGeneratingEvent(false);
 
@@ -404,11 +409,11 @@ function App() {
         }, 500);
       }
 
-      // GeneratedEventをGameEventに変換
+      // GeneratedEventをGameEventに変換（AI情報を含む）
       return {
         id: generatedEvent.id,
         title: generatedEvent.title,
-        description: generatedEvent.description,
+        description: `${generatedEvent.description}\n\n<small style="color: #64748b; font-size: 0.75rem;">🤖 AI政策生成 (${providerName}) | ⚡ ${responseTime}ms</small>`,
         options: generatedEvent.options.map(option => ({
           text: option.text,
           effect: option.expectedEffects
@@ -490,22 +495,32 @@ function App() {
   const [isAnalyzingPolicy, setIsAnalyzingPolicy] = useState(false);
   const [isGeneratingEvent, setIsGeneratingEvent] = useState(false);
 
-  // ツンデレAI政治秘書KASUMIの分析コメント（Claude API使用）
+  // ツンデレAI政治秘書KASUMIの分析コメント（AI API使用）
   const getAISecretaryAnalysis = async (effect: PolicyEffect, policyChoice: string): Promise<string> => {
     try {
+      const startTime = performance.now();
       // AIプロバイダーマネージャー経由でツンデレコメントを生成
-      return await aiProvider.generateTsundereComment(gameState, policyChoice, effect);
+      const comment = await aiProvider.generateTsundereComment(gameState, policyChoice, effect);
+      const endTime = performance.now();
+      const responseTime = Math.round(endTime - startTime);
+      const providerName = aiProvider.getProviderConfigs()[currentProvider].displayName;
+
+      // AI情報を含むコメントを返す
+      return `${comment}\n\n<small style="color: #64748b; font-size: 0.75rem;">🤖 AI秘書 (${providerName}) | ⚡ ${responseTime}ms</small>`;
     } catch (error) {
-      return getAISecretaryAnalysisFallback(effect, policyChoice);
+      return `${getAISecretaryAnalysisFallback(effect, policyChoice)}\n\n<small style="color: #64748b; font-size: 0.75rem;">🤖 フォールバック | ⚡ 0ms</small>`;
     }
   };
 
   // フォールバック版のツンデレ分析
-  const getAISecretaryAnalysisFallback = (effect: PolicyEffect, _policyChoice: string): string => {
+  const getAISecretaryAnalysisFallback = (effect: PolicyEffect, policyChoice: string): string => {
     const approvalChange = effect.approvalRating || 0;
     const gdpChange = effect.gdp || 0;
     const stockChange = effect.stockPrice || 0;
     const diplomacyChange = effect.diplomacy || 0;
+    const nationalDebtChange = effect.nationalDebt || 0;
+    const technologyChange = effect.technology || 0;
+    const environmentChange = effect.environment || 0;
     
     // 緊急イベント時の特別コメント
     if (gameState.currentEvent?.title.includes('🚨 緊急事態')) {
@@ -1036,14 +1051,18 @@ function App() {
   // ツンデレAI秘書による総括評価コメント
   const generateFinalSecretaryComment = async (rankData: any): Promise<string> => {
     const { rank, totalScore, scores } = rankData;
-    
+
     // AI APIを使用した総括評価生成を試行
     try {
-      // 実際のAPI呼び出しはここでは省略し、フォールバック版を使用
-      return generateTsundereFinalComment(rankData);
-      
+      const startTime = performance.now();
+      const comment = generateTsundereFinalComment(rankData);
+      const endTime = performance.now();
+      const responseTime = Math.round(endTime - startTime);
+
+      return `${comment}\n\n<small style="color: #64748b; font-size: 0.75rem;">🤖 AI総括評価 (フォールバック) | ⚡ ${responseTime}ms</small>`;
+
     } catch (error) {
-      return generateTsundereFinalComment(rankData);
+      return `${generateTsundereFinalComment(rankData)}\n\n<small style="color: #64748b; font-size: 0.75rem;">🤖 AI総括評価 (フォールバック) | ⚡ 0ms</small>`;
     }
   };
 
@@ -1408,10 +1427,8 @@ function App() {
                   </div>
                 </div>
               ) : (
-                <p>
-                  {gameState.kasumiDisplayMessage || secretaryComment || '総括評価を準備中です...'}
-                  {gameState.isTyping && <span className="animate-pulse">|</span>}
-                </p>
+                <div className="text-gray-200 leading-relaxed"
+                     dangerouslySetInnerHTML={{ __html: (gameState.kasumiDisplayMessage || secretaryComment || '総括評価を準備中です...').replace(/\n/g, '<br/>') + (gameState.isTyping ? '<span class="animate-pulse">|</span>' : '') }} />
               )}
             </div>
           </div>
@@ -1599,9 +1616,8 @@ function App() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-white leading-relaxed whitespace-pre-wrap">
-                    {gameState.kasumiDisplayMessage || gameState.kasumiMessage}
-                  </div>
+                  <div className="text-sm text-white leading-relaxed whitespace-pre-wrap"
+                       dangerouslySetInnerHTML={{ __html: (gameState.kasumiDisplayMessage || gameState.kasumiMessage || '').replace(/\n/g, '<br/>') }} />
                 )}
               </div>
               
@@ -1644,7 +1660,8 @@ function App() {
                       🤖 AI生成
                     </span>
                   </div>
-                  <p className="mb-4 text-gray-300 text-sm leading-relaxed">{gameState.currentEvent.description}</p>
+                  <p className="mb-4 text-gray-300 text-sm leading-relaxed"
+                     dangerouslySetInnerHTML={{ __html: gameState.currentEvent.description.replace(/\n/g, '<br/>') }} />
                 </>
               ) : (
                 <div className="text-center py-8">
