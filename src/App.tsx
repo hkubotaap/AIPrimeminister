@@ -297,7 +297,7 @@ function App() {
   // ランキング機能用のstate
   const [showRankingModal, setShowRankingModal] = useState(false);
   const [showScoreSubmissionModal, setShowScoreSubmissionModal] = useState(false);
-  const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
+  const [currentProvider, setCurrentProvider] = useState<AIProvider>('gemini');
 
   // ゲーム終了時の総括評価生成
   React.useEffect(() => {
@@ -1134,6 +1134,8 @@ function App() {
     setIsProcessing(false);
     setSecretaryComment('');
     setIsGeneratingComment(false);
+    setShowRankingModal(false);
+    setShowScoreSubmissionModal(false);
   };
 
   // 開始前
