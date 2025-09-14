@@ -586,6 +586,31 @@ function App() {
       return applicableAnalysis.comment;
     }
     
+    // 政策内容に応じたツンデレコメント
+    if (policyChoice.includes('予算') || policyChoice.includes('投資')) {
+      if (nationalDebtChange > 50) {
+        return 'もう！また国債発行するの？財政赤字が心配になるじゃない...でも、国民のためだから仕方ないのかしら。私が家計簿つけてあげるから、ちゃんと管理してよね？';
+      } else if (nationalDebtChange < -30) {
+        return 'あら、財政健全化を意識してるのね！え、えーと...ちゃんと分析してたのよ、総理の判断！...さすがね。私も見直したわ。';
+      }
+    }
+
+    if (policyChoice.includes('外交') || policyChoice.includes('国際')) {
+      if (diplomacyChange > 5) {
+        return '外交成果が出てるじゃない！国際社会での総理の評価が上がってるのよ？...ま、まあ当然よね。私がアドバイスしてるんだから！でも...ちょっと誇らしいかも。';
+      } else if (diplomacyChange < -5) {
+        return '外交関係が少し悪化したみたい...。でも大丈夫よ！総理の人柄なら、きっと修復できるから。私も一緒に頑張るわ！...べ、別に心配してるわけじゃないのよ？';
+      }
+    }
+
+    if (policyChoice.includes('環境') || policyChoice.includes('気候')) {
+      if (environmentChange > 8) {
+        return 'すごい！環境対策がこんなに評価されるなんて...！総理、未来への投資をちゃんと考えてたのね。私も地球のこと、すごく心配だったのよ...ありがとう。';
+      } else if (environmentChange < -8) {
+        return '環境に悪影響が出ちゃった...。でも経済も大切だし、難しい判断よね。次は環境にも配慮した政策を考えましょ？私が一緒に知恵を絞ってあげる！';
+      }
+    }
+
     // デフォルトのツンデレコメント
     const defaultTsundereComments = [
       'まあ、普通の判断ね。総理らしいといえばらしいかも...。でも次はもっと大胆でもいいのよ？',
@@ -594,7 +619,12 @@ function App() {
       '総理の考えはよくわからないけど...まあ、ついていくわ。私が総理を支えてあげるんだから！',
       'この選択、国民はどう思うかしら...。でも総理が決めたなら、私が全力でサポートするから安心して。',
       'ふーん、そういう政策ね。まあ悪くないんじゃない？...ちょっとだけ評価してあげる。',
-      'もう、総理ったら心配させないでよ！でも...この判断、嫌いじゃないわ。'
+      'もう、総理ったら心配させないでよ！でも...この判断、嫌いじゃないわ。',
+      '今回の政策、私の予想とちょっと違ったけど...面白い発想ね。総理らしいわ！',
+      'データ分析の結果では...まあ、悪くない判断よ。私の計算が正しければ、きっと上手くいくはず！',
+      'こういう決断をする時の総理、ちょっとかっこいいかも...。あ、別に見とれてたわけじゃないのよ！',
+      '政治って本当に複雑よね...。でも総理と一緒なら、どんな課題も乗り越えられる気がするの。',
+      '総理の政治理念、少しずつわかってきたかも...。私も総理について勉強しなくちゃね！'
     ];
     
     return defaultTsundereComments[Math.floor(Math.random() * defaultTsundereComments.length)];
@@ -636,6 +666,9 @@ function App() {
   const startGame = async () => {
     console.log('🎮 AI駆動ゲーム開始');
     setIsGeneratingEvent(true);
+    // ゲーム開始時にモーダル状態をリセット
+    setShowRankingModal(false);
+    setShowScoreSubmissionModal(false);
     
     try {
       const firstEvent = await generateAIEvent();
