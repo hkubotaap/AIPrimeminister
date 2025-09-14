@@ -486,7 +486,6 @@ function App() {
   const [aiProvider] = useState(() => new AIProviderManager());
   const [policyAnalyzer] = useState(() => new PolicyAnalyzer(aiProvider));
   const [eventGenerator] = useState(() => new EventGenerator(aiProvider));
-  const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
   const [isAnalyzingPolicy, setIsAnalyzingPolicy] = useState(false);
   const [isGeneratingEvent, setIsGeneratingEvent] = useState(false);
@@ -1442,6 +1441,7 @@ function App() {
 
   // ゲーム画面
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-2">
       <div className="max-w-7xl mx-auto">
         {/* ヘッダー */}
@@ -1770,9 +1770,10 @@ function App() {
       isOpen={showScoreSubmissionModal}
       onClose={() => setShowScoreSubmissionModal(false)}
       gameState={gameState}
-      totalScore={calculateFinalRank().score}
+      totalScore={calculateFinalRank().totalScore}
       rank={calculateFinalRank().rank}
     />
+    </>
   );
 }
 
