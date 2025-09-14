@@ -784,7 +784,6 @@ function App() {
           next.currentEvent = null;
         }
         return next;
-        return next;
       });
       
       // 次ターンがある場合は新しいイベントを生成
