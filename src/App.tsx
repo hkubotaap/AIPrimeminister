@@ -3,9 +3,9 @@ import React from 'react';
 import { AIProviderManager, AIProvider } from './ai-provider';
 import { PolicyAnalyzer, PolicyContext } from './policy-analyzer';
 import { EventGenerator, EventGenerationContext, GeneratedEvent } from './event-generator';
+import { RankingSystem, RankingEntry } from './ranking-system';
 import { SecurityValidator } from './security-config';
-import RankingModal from './components/RankingModal';
-import ScoreSubmissionModal from './components/ScoreSubmissionModal';
+// ランキング関連のコンポーネントは削除済み
 
 // ポリシー効果の型
 interface PolicyEffect {
@@ -294,10 +294,7 @@ function App() {
   const [secretaryComment, setSecretaryComment] = useState<string>('');
   const [isGeneratingComment, setIsGeneratingComment] = useState(false);
   
-  // ランキング機能用のstate
-  const [showRankingModal, setShowRankingModal] = useState(false);
-  const [showScoreSubmissionModal, setShowScoreSubmissionModal] = useState(false);
-  const [currentProvider, setCurrentProvider] = useState<AIProvider>('gemini');
+  // ランキング機能は削除済み
 
   // ゲーム終了時の総括評価生成
   React.useEffect(() => {
@@ -491,9 +488,13 @@ function App() {
   const [aiProvider] = useState(() => new AIProviderManager());
   const [policyAnalyzer] = useState(() => new PolicyAnalyzer(aiProvider));
   const [eventGenerator] = useState(() => new EventGenerator(aiProvider));
+  const [rankingSystem] = useState(() => new RankingSystem());
+  const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
   const [isAnalyzingPolicy, setIsAnalyzingPolicy] = useState(false);
   const [isGeneratingEvent, setIsGeneratingEvent] = useState(false);
+  
+  // ランキング関連の状態は削除済み
 
   // ツンデレAI政治秘書KASUMIの分析コメント（AI API使用）
   const getAISecretaryAnalysis = async (effect: PolicyEffect, policyChoice: string): Promise<string> => {
@@ -681,9 +682,6 @@ function App() {
   const startGame = async () => {
     console.log('🎮 AI駆動ゲーム開始');
     setIsGeneratingEvent(true);
-    // ゲーム開始時にモーダル状態をリセット
-    setShowRankingModal(false);
-    setShowScoreSubmissionModal(false);
     
     try {
       const firstEvent = await generateAIEvent();
@@ -800,26 +798,6 @@ function App() {
         // 政治トレンド分析を更新
         next.politicalTrends = analyzePoliticalTrends(next);
         
-        // AI駆動の専門的政治分析コメント
-        setGameState(prevState => ({ ...prevState, isAIThinking: true, kasumiDisplayMessage: 'AI秘書KASUMIが政治情勢を分析中...' }));
-        
-        getAISecretaryAnalysis(eff, option.text).then(analysisMessage => {
-          setGameState(prevState => {
-            const newState = { ...prevState };
-            newState.kasumiMessage = analysisMessage;
-            newState.isAIThinking = false;
-            
-            // メッセージを即座に表示
-            setTimeout(() => {
-              displayMessage(analysisMessage);
-            }, 500);
-            
-            return newState;
-          });
-        }).catch(() => {
-          setGameState(prevState => ({ ...prevState, isAIThinking: false }));
-        });
-        
         // 次ターンor終了判定
         if (next.turn >= next.maxTurns) {
           next.isGameOver = true;
@@ -831,6 +809,26 @@ function App() {
           next.currentEvent = null;
         }
         return next;
+      });
+      
+      // AI駆動の専門的政治分析コメント
+      setGameState(prevState => ({ ...prevState, isAIThinking: true, kasumiDisplayMessage: 'AI秘書KASUMIが政治情勢を分析中...' }));
+      
+      getAISecretaryAnalysis(analysisResult.effects, option.text).then(analysisMessage => {
+        setGameState(prevState => {
+          const newState = { ...prevState };
+          newState.kasumiMessage = analysisMessage;
+          newState.isAIThinking = false;
+          
+          // メッセージを即座に表示
+          setTimeout(() => {
+            displayMessage(analysisMessage);
+          }, 500);
+          
+          return newState;
+        });
+      }).catch(() => {
+        setGameState(prevState => ({ ...prevState, isAIThinking: false }));
       });
       
       // 次ターンがある場合は新しいイベントを生成
@@ -903,14 +901,22 @@ function App() {
           // 政治トレンド分析を更新
           next.politicalTrends = analyzePoliticalTrends(next);
           
-          // AI駆動の専門的政治分析コメント
+          // フォールバック時のAI分析コメント
           getAISecretaryAnalysis(eff, option.text).then(analysisMessage => {
-            next.kasumiMessage = analysisMessage;
-            
-            // メッセージを即座に表示
-            setTimeout(() => {
-              displayMessage(analysisMessage);
-            }, 1000);
+            setGameState(prevState => {
+              const newState = { ...prevState };
+              newState.kasumiMessage = analysisMessage;
+              newState.isAIThinking = false;
+              
+              // メッセージを即座に表示
+              setTimeout(() => {
+                displayMessage(analysisMessage);
+              }, 500);
+              
+              return newState;
+            });
+          }).catch(() => {
+            setGameState(prevState => ({ ...prevState, isAIThinking: false }));
           });
           
           // 次ターンor終了判定
@@ -1141,11 +1147,24 @@ function App() {
   // プロバイダー設定の初期化
   React.useEffect(() => {
     const initProvider = async () => {
-      await aiProvider.recheckProviders();
-      setCurrentProvider(aiProvider.getCurrentProvider());
+      try {
+        console.log('🔄 AIプロバイダー初期化開始...');
+        await aiProvider.recheckProviders();
+        const provider = aiProvider.getCurrentProvider();
+        setCurrentProvider(provider);
+        console.log('✅ AIプロバイダー初期化完了:', provider);
+      } catch (error) {
+        console.error('❌ AIプロバイダー初期化エラー:', error);
+        // エラーが発生してもフォールバックプロバイダーを設定
+        setCurrentProvider('fallback');
+      }
     };
     initProvider();
-  }, []);
+  }, [aiProvider]);
+
+  // ランキング関連の機能は削除済み
+
+  // handleRegisterRanking関数は削除済み
 
   // リセット
   const resetGame = () => {
@@ -1186,8 +1205,6 @@ function App() {
     setIsProcessing(false);
     setSecretaryComment('');
     setIsGeneratingComment(false);
-    setShowRankingModal(false);
-    setShowScoreSubmissionModal(false);
   };
 
   // 開始前
@@ -1200,12 +1217,7 @@ function App() {
         <div className="text-center max-w-2xl">
           <div className="flex items-center justify-center gap-4 mb-6">
             <h1 className="text-4xl font-bold">🏛️ AI総理大臣シミュレーター</h1>
-            <button
-              onClick={() => setShowRankingModal(true)}
-              className="px-3 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-lg text-sm font-bold text-white shadow-lg transition-all duration-200 hover:scale-105"
-            >
-              🏆 ランキング
-            </button>
+
           </div>
           <p className="mb-4 text-gray-300">現代日本の政治課題に挑戦しよう</p>
           <p className="mb-6 text-sm text-cyan-300">📊 現実的な政策シミュレーション</p>
@@ -1306,6 +1318,8 @@ function App() {
               'ゲームスタート'
             )}
           </button>
+          
+
         </div>
       </div>
     );
@@ -1467,17 +1481,12 @@ function App() {
           <div className="text-center space-y-4">
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={() => setShowScoreSubmissionModal(true)}
+                onClick={resetGame}
                 className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-lg text-white font-bold shadow-lg transition-all duration-200 hover:scale-105"
               >
-                🏆 ランキングに登録
+                🔄 新しいゲーム
               </button>
-              <button
-                onClick={() => setShowRankingModal(true)}
-                className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 rounded-lg text-white font-bold shadow-lg transition-all duration-200 hover:scale-105"
-              >
-                📊 ランキング表示
-              </button>
+
             </div>
             <button
               onClick={resetGame}
@@ -1490,6 +1499,10 @@ function App() {
       </div>
     );
   }
+
+  // ランキング表示モーダルは削除済み
+
+  // ランキング登録モーダルは削除済み
 
   // ゲーム画面
   return (
@@ -1672,24 +1685,56 @@ function App() {
               )}
               
               {!isGeneratingEvent && gameState.currentEvent && (
-                <div className="space-y-2">
-                  {gameState.currentEvent.options.map((opt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handlePolicyChoice(opt)}
-                    disabled={isProcessing}
-                    className="w-full text-left px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-sm disabled:opacity-50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>{opt.text}</span>
-                      {isProcessing && isAnalyzingPolicy && (
-                        <span className="text-xs text-cyan-300 animate-pulse">
-                          🤖 AI分析中...
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                  ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {gameState.currentEvent.options.map((opt, idx) => {
+                    // 政治的立場に応じた色分け
+                    const getStanceColor = (index: number) => {
+                      const colors = [
+                        'bg-red-600 hover:bg-red-700',      // 右派・保守
+                        'bg-blue-600 hover:bg-blue-700',    // 左派・リベラル
+                        'bg-gray-600 hover:bg-gray-700',    // 中道・穏健
+                        'bg-orange-600 hover:bg-orange-700', // ポピュリスト
+                        'bg-purple-600 hover:bg-purple-700', // テクノクラート
+                        'bg-yellow-600 hover:bg-yellow-700', // ナショナリスト
+                        'bg-green-600 hover:bg-green-700',   // プラグマティスト
+                        'bg-pink-600 hover:bg-pink-700',     // 極端派・急進
+                        'bg-cyan-600 hover:bg-cyan-700',     // 国際協調派
+                        'bg-indigo-600 hover:bg-indigo-700'  // 地方分権派
+                      ];
+                      return colors[index] || 'bg-indigo-600 hover:bg-indigo-700';
+                    };
+
+                    const getStanceLabel = (index: number) => {
+                      const labels = [
+                        '🏛️ 保守', '🌹 リベラル', '⚖️ 中道', '📢 ポピュリスト', '🔬 テクノクラート',
+                        '🇯🇵 ナショナリスト', '🎯 プラグマティスト', '⚡ 急進派', '🌍 国際協調', '🏘️ 地方分権'
+                      ];
+                      return labels[index] || '📋 その他';
+                    };
+
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handlePolicyChoice(opt)}
+                        disabled={isProcessing}
+                        className={`w-full text-left px-3 py-3 ${getStanceColor(idx)} rounded-lg text-sm disabled:opacity-50 transition-all duration-200 border border-opacity-30 hover:border-opacity-60 border-white`}
+                      >
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold opacity-80">
+                              {getStanceLabel(idx)}
+                            </span>
+                            {isProcessing && isAnalyzingPolicy && (
+                              <span className="text-xs text-cyan-300 animate-pulse">
+                                🤖 AI分析中...
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm leading-tight">{opt.text}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
               
@@ -1811,20 +1856,7 @@ function App() {
       </div>
     </div>
     
-    {/* ランキングモーダル */}
-    <RankingModal 
-      isOpen={showRankingModal}
-      onClose={() => setShowRankingModal(false)}
-    />
-    
-    {/* スコア登録モーダル */}
-    <ScoreSubmissionModal
-      isOpen={showScoreSubmissionModal}
-      onClose={() => setShowScoreSubmissionModal(false)}
-      gameState={gameState}
-      totalScore={calculateFinalRank().totalScore}
-      rank={calculateFinalRank().rank}
-    />
+    {/* ランキング関連のモーダルは削除済み */}
     </>
   );
 }

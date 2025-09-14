@@ -265,7 +265,7 @@ export class SecureAPIClient {
             const response = await fetch(`${this.baseURL}/ollama/health`);
             const data = await response.json();
             console.log('🦙 Ollamaヘルスチェック:', data);
-            return data.available;
+            return data.available || false;
         } catch (error) {
             console.error('❌ Ollamaヘルスチェック失敗:', error);
             return false;
