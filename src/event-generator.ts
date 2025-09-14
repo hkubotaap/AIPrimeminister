@@ -352,38 +352,49 @@ export class EventGenerator {
     const selectedEmergency = emergencyTypes[Math.floor(Math.random() * emergencyTypes.length)];
     const selectedExample = selectedEmergency.examples[Math.floor(Math.random() * selectedEmergency.examples.length)];
     
-    const prompt = `🚨 緊急事態が発生しました。以下の条件で緊急政治イベントを生成してください：
+    const prompt = `🚨 面白緊急事態発生！以下の条件で、深刻すぎず、テンポよく楽しめる緊急政治イベントを生成してください：
 
 ## 緊急事態情報
 - 緊急事態タイプ: ${selectedEmergency.name} (${selectedExample})
 - 現在の政治状況: 支持率${context.currentState.approvalRating}%、リスクレベル${context.politicalTrends.riskLevel}
 - 政権フェーズ: ${this.getPhaseText(context.gamePhase)}
 
-${this.buildEventGenerationPrompt(context)}
+## 🎭 面白緊急事態の作り方
+**重要**: 深刻になりすぎず、ユーモアとテンポの良さを重視してください！
 
-## 緊急事態特別要件
-- タイトルに🚨を含めること
-- urgencyを"critical"に設定
-- complexityを"complex"に設定
-- 即座の対応が必要な状況として設定
-- 各選択肢は緊急時の政治的判断を反映
-- 短期的影響と長期的影響の両方を考慮
-- 国民の安全・安心に直結する内容
-- メディア対応・国際的な注目も考慮
+### 文体・トーン
+- 軽快で親しみやすい文章
+- 「でも実は...」「意外にも...」などの展開
+- 国民が「なんだそれ！」と笑えるレベル
+- 絶望的にならず、希望や面白さを含む
 
-## 緊急時の政治的立場
-1. **危機管理重視**: 迅速な対応、強力なリーダーシップ
-2. **慎重派**: 情報収集優先、段階的対応
-3. **国民保護優先**: 人命最優先、避難・救援重視
-4. **経済影響最小化**: 経済活動継続、市場安定化
-5. **国際協調**: 他国・国際機関との連携
-6. **自力対応**: 国内資源での解決、自主防衛
-7. **抜本対策**: 根本的解決、制度改革
-8. **情報公開**: 透明性重視、国民への説明責任
-9. **専門家主導**: 科学的根拠、専門知識活用
-10. **政治的安定**: 政権維持、政治的混乱回避
+### 緊急事態の例
+- 「ゴジラが観光に来た」
+- 「AIが働きたくないと言い出した」
+- 「宇宙人が温泉にハマった」
+- 「全国のおじいちゃんが急に元気になった」
+- 「隣国が日本のアニメに夢中になった」
 
-緊急事態として適切な10個の選択肢を生成してください。`;
+### 選択肢の作り方
+各選択肢は以下の要素を含む：
+1. **ユーモラスな対応**: 「一緒に○○しよう」「○○大使に任命」
+2. **前向きな解決策**: 問題を機会に変える発想
+3. **国民が笑顔になる**: 「なるほど！」と思える政策
+4. **適度な政治効果**: ゲームバランスを保つ
+
+### 政治的立場（面白版）
+1. **お祭り騒ぎ派**: 「これは面白い！」と楽しむ
+2. **観光活用派**: 「観光資源にしよう」
+3. **国民一体派**: 「みんなで一緒に対応」
+4. **ユーモア外交派**: 「笑いで解決」
+5. **新文化創造派**: 「新しい文化を作ろう」
+6. **科学的好奇心派**: 「研究してみよう」
+7. **国際アピール派**: 「世界に発信しよう」
+8. **伝統活用派**: 「日本らしさで対応」
+9. **技術革新派**: 「新技術で解決」
+10. **平和共存派**: 「仲良くやろう」
+
+面白くてテンポの良い緊急事態イベントを生成してください！`;
 
     try {
       const currentProvider = this.aiProvider.getCurrentProvider();
@@ -616,19 +627,24 @@ ${this.buildEventGenerationPrompt(context)}
 
     const emergencyEvents = [
       {
-        title: '🚨 緊急事態: 大規模システム障害',
-        description: '政府の重要システムに大規模な障害が発生し、行政サービスが停止しています。',
-        category: 'technology'
+        title: '🚨 緊急事態：全国の猫が政治に興味を持った！',
+        description: '全国の猫が突然政治討論を始め、国会前でデモを開催。「にゃーにゃー政治改革」を要求しています。意外にも的確な指摘で、政治家たちがタジタジ。',
+        category: 'social'
       },
       {
-        title: '🚨 緊急事態: 経済指標の急激な悪化',
-        description: '主要経済指標が急激に悪化し、市場に動揺が広がっています。',
+        title: '🚨 緊急事態：日本全国でラーメンが売り切れ！',
+        description: '謎の現象により全国のラーメンが一斉に売り切れ。国民が「ラーメンなしでは生きられない」と大パニック。でも皆で手作りラーメンを作り始めて、意外に楽しい雰囲気。',
         category: 'economy'
       },
       {
-        title: '🚨 緊急事態: 国際関係の急激な悪化',
-        description: '近隣国との関係が急激に悪化し、外交的な緊張が高まっています。',
-        category: 'diplomacy'
+        title: '🚨 緊急事態：桜が一年中咲き続ける現象発生！',
+        description: '全国の桜が季節を無視して一年中咲き続ける謎の現象が発生。お花見が日常になり、観光客が殺到。でも「いつでも桜」で逆に新鮮味がなくなったという声も。',
+        category: 'environment'
+      },
+      {
+        title: '🚨 緊急事態：全国の電車が「お疲れ様」と挨拶し始めた！',
+        description: '全国の電車のアナウンスが突然「お疲れ様でした」「今日も一日頑張りましたね」と優しくなり、乗客が感動で涙。でも朝の通勤ラッシュで泣く人続出で電車が遅延。',
+        category: 'technology'
       }
     ];
 
@@ -643,48 +659,48 @@ ${this.buildEventGenerationPrompt(context)}
       complexity: 'complex',
       options: [
         {
-          text: '緊急対策本部を設置し全力対応',
-          type: 'moderate',
-          politicalStance: 'center',
+          text: '「これは面白い！」と国民と一緒に楽しむ',
+          type: 'populist' as const,
+          politicalStance: 'populist' as const,
           expectedEffects: {
-            approvalRating: Math.floor(Math.random() * 16) + 5,
-            gdp: Math.floor(Math.random() * 21) - 10,
-            nationalDebt: Math.floor(Math.random() * 51) + 30,
-            technology: Math.floor(Math.random() * 11) + 5,
-            environment: Math.floor(Math.random() * 7) - 3,
-            stockPrice: Math.floor(Math.random() * 801) - 400,
-            usdJpyRate: Math.floor(Math.random() * 11) - 5,
-            diplomacy: Math.floor(Math.random() * 16) + 5
-          }
-        },
-        {
-          text: '段階的対応で慎重に進める',
-          type: 'conservative',
-          politicalStance: 'right',
-          expectedEffects: {
-            approvalRating: Math.floor(Math.random() * 11) + 2,
-            gdp: Math.floor(Math.random() * 11) - 5,
-            nationalDebt: Math.floor(Math.random() * 21) + 10,
-            technology: Math.floor(Math.random() * 7) + 2,
-            environment: Math.floor(Math.random() * 5) - 2,
-            stockPrice: Math.floor(Math.random() * 401) - 200,
-            usdJpyRate: Math.floor(Math.random() * 8) - 4,
-            diplomacy: Math.floor(Math.random() * 11) + 2
-          }
-        },
-        {
-          text: '抜本的改革で根本解決を図る',
-          type: 'radical' as const,
-          politicalStance: 'far-left' as const,
-          expectedEffects: {
-            approvalRating: Math.floor(Math.random() * 21) - 5,
-            gdp: Math.floor(Math.random() * 31) - 10,
-            nationalDebt: Math.floor(Math.random() * 71) + 50,
-            technology: Math.floor(Math.random() * 16) + 10,
-            environment: Math.floor(Math.random() * 11) - 5,
-            stockPrice: Math.floor(Math.random() * 1001) - 500,
+            approvalRating: Math.floor(Math.random() * 20) + 15,
+            gdp: Math.floor(Math.random() * 11) + 5,
+            nationalDebt: Math.floor(Math.random() * 41) + 20,
+            technology: Math.floor(Math.random() * 8) + 5,
+            environment: Math.floor(Math.random() * 8) + 3,
+            stockPrice: Math.floor(Math.random() * 601) + 200,
             usdJpyRate: Math.floor(Math.random() * 6) - 3,
-            diplomacy: Math.floor(Math.random() * 11) - 2
+            diplomacy: Math.floor(Math.random() * 11) + 8
+          }
+        },
+        {
+          text: '新しい観光資源として世界にアピール',
+          type: 'liberal' as const,
+          politicalStance: 'liberal' as const,
+          expectedEffects: {
+            approvalRating: Math.floor(Math.random() * 15) + 10,
+            gdp: Math.floor(Math.random() * 16) + 8,
+            nationalDebt: Math.floor(Math.random() * 31) + 15,
+            technology: Math.floor(Math.random() * 6) + 3,
+            environment: Math.floor(Math.random() * 6) + 2,
+            stockPrice: Math.floor(Math.random() * 501) + 300,
+            usdJpyRate: Math.floor(Math.random() * 8) - 4,
+            diplomacy: Math.floor(Math.random() * 16) + 10
+          }
+        },
+        {
+          text: '科学的に研究して新発見を目指す',
+          type: 'technocratic' as const,
+          politicalStance: 'technocratic' as const,
+          expectedEffects: {
+            approvalRating: Math.floor(Math.random() * 12) + 8,
+            gdp: Math.floor(Math.random() * 8) + 3,
+            nationalDebt: Math.floor(Math.random() * 51) + 40,
+            technology: Math.floor(Math.random() * 16) + 12,
+            environment: Math.floor(Math.random() * 8) + 5,
+            stockPrice: Math.floor(Math.random() * 401) + 100,
+            usdJpyRate: Math.floor(Math.random() * 6) - 3,
+            diplomacy: Math.floor(Math.random() * 8) + 5
           }
         }
       ],

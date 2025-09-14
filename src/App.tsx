@@ -82,7 +82,11 @@ interface GameState {
     turn: number;
     approvalRating: number;
     gdp: number;
+    nationalDebt: number;
+    technology: number;
+    environment: number;
     stockPrice: number;
+    usdJpyRate: number;
     diplomacy: number;
   }>;
   usedEventIds: string[];
@@ -185,72 +189,138 @@ const eventTemplates: EventTemplate[] = [
   },
 ];
 
-// 緊急イベントテンプレート
+// 緊急イベントテンプレート（面白くてテンポの良い緊急事態）
 const emergencyEventTemplates: EventTemplate[] = [
+  // 自然災害系
   {
     id: 'earthquake_emergency',
     category: 'emergency',
-    title: '🚨 緊急事態：大規模地震発生',
-    description: 'マグニチュード7.2の大地震が首都圏を襲いました。多数の建物が倒壊し、交通機関が麻痺。政府の迅速な対応が求められています。',
+    title: '🚨 緊急事態：南海トラフ地震発生！',
+    description: 'ついに来ました！マグニチュード8.1の南海トラフ地震が発生。新幹線が宙に浮き、東京タワーがゆらゆら。でも日本人は慣れてるので意外と冷静です。「あ、地震だ」レベル。',
     options: [
-      { text: '緊急事態宣言を発令し自衛隊を総動員', effect: { approvalRating: 15, gdp: -20, nationalDebt: 100, stockPrice: -800 } },
-      { text: '災害対策本部を設置し段階的対応', effect: { approvalRating: 8, gdp: -10, nationalDebt: 60, stockPrice: -400 } },
-      { text: '国際支援を要請し復旧を急ぐ', effect: { approvalRating: 5, gdp: -5, diplomacy: 8, nationalDebt: 40 } },
+      { text: '「地震なんて日常茶飯事！」と国民を励ます', effect: { approvalRating: 18, gdp: -15, nationalDebt: 80, stockPrice: -500 } },
+      { text: '自衛隊と一緒に炊き出しボランティア参加', effect: { approvalRating: 25, gdp: -10, nationalDebt: 60, diplomacy: 5 } },
+      { text: '「地震に負けない日本」をアピール', effect: { approvalRating: 12, gdp: -8, technology: 8, stockPrice: 200 } },
+    ],
+  },
+  {
+    id: 'typhoon_emergency',
+    category: 'emergency',
+    title: '🚨 緊急事態：スーパー台風「ゴジラ号」接近！',
+    description: '史上最強クラスの台風「ゴジラ号」が日本列島に接近中！風速70m/sで、傘が宇宙まで飛んでいきそうです。コロッケの売上が急上昇しています。',
+    options: [
+      { text: '「台風の日はコロッケ！」国民運動を開始', effect: { approvalRating: 20, gdp: 3, stockPrice: 300, environment: -3 } },
+      { text: '全国民に「家でNetflix鑑賞」を推奨', effect: { approvalRating: 15, gdp: -5, technology: 5, environment: 8 } },
+      { text: '台風に向かって「帰れ！」と叫ぶ', effect: { approvalRating: 8, gdp: -2, diplomacy: -5, stockPrice: -100 } },
     ],
   },
   {
     id: 'volcano_emergency',
     category: 'emergency',
-    title: '🚨 緊急事態：富士山噴火警戒',
-    description: '富士山で火山活動が活発化し、噴火警戒レベルが最高レベルに引き上げられました。周辺住民の避難と経済への影響が懸念されます。',
+    title: '🚨 緊急事態：富士山が「おはよう」と言った！',
+    description: '富士山が300年ぶりに目を覚まし、小さく噴火しました。「おはよう、日本！」と言っているようです。温泉が増えて観光客が殺到中。でも灰が洗濯物につくのが困りもの。',
     options: [
-      { text: '大規模避難計画を即座に実行', effect: { approvalRating: 12, gdp: -15, nationalDebt: 80, environment: -5 } },
-      { text: '観測体制を強化し慎重に対応', effect: { approvalRating: 6, gdp: -8, nationalDebt: 40, technology: 5 } },
-      { text: '経済支援策を優先し企業を保護', effect: { approvalRating: 3, gdp: -5, nationalDebt: 60, stockPrice: 200 } },
+      { text: '「富士山温泉ツアー」で観光振興', effect: { approvalRating: 22, gdp: 12, environment: -8, stockPrice: 600 } },
+      { text: '火山灰を「美容パック」として販売', effect: { approvalRating: 15, gdp: 8, technology: 5, stockPrice: 400 } },
+      { text: '富士山に「もう少し寝てて」とお願い', effect: { approvalRating: 10, gdp: -3, environment: 3, diplomacy: -2 } },
+    ],
+  },
+  
+  // 生物・環境リスク系
+  {
+    id: 'alien_species_emergency',
+    category: 'emergency',
+    title: '🚨 緊急事態：巨大カピバラが日本占拠！',
+    description: '南米から来た巨大カピバラ（体長3m）が温泉を独占し、全国の温泉地がカピバラ天国に！お客さんは「可愛い」と大喜びですが、温泉の湯が足りません。',
+    options: [
+      { text: '「カピバラ共和国」として観光立国を目指す', effect: { approvalRating: 28, gdp: 15, environment: 10, diplomacy: 8 } },
+      { text: 'カピバラ専用温泉を全国に建設', effect: { approvalRating: 20, gdp: 5, nationalDebt: 80, environment: 5 } },
+      { text: 'カピバラと平和条約を締結', effect: { approvalRating: 12, diplomacy: 12, gdp: -2, stockPrice: 200 } },
     ],
   },
   {
-    id: 'cyber_attack_emergency',
+    id: 'mystery_virus_emergency',
     category: 'emergency',
-    title: '🚨 緊急事態：大規模サイバーテロ',
-    description: '政府機関や重要インフラに対する大規模サイバー攻撃が発生。電力網や金融システムに深刻な影響が出ています。',
+    title: '🚨 緊急事態：「笑いが止まらない症候群」流行！',
+    description: '新型ウイルスにより、感染者が24時間笑い続ける症状が発生。でも皆幸せそうで、職場の雰囲気が異常に良くなりました。生産性は謎に向上中。',
     options: [
-      { text: 'サイバーセキュリティ緊急対策本部設置', effect: { approvalRating: 10, technology: 15, nationalDebt: 70, stockPrice: -600 } },
-      { text: '国際協力でサイバー防衛を強化', effect: { approvalRating: 8, diplomacy: 12, technology: 8, nationalDebt: 50 } },
-      { text: '民間企業との連携で復旧を急ぐ', effect: { approvalRating: 5, technology: 10, gdp: -5, stockPrice: -200 } },
+      { text: '「笑顔大国日本」として世界にアピール', effect: { approvalRating: 25, gdp: 10, diplomacy: 15, stockPrice: 500 } },
+      { text: '笑いすぎて疲れる人のための休憩所設置', effect: { approvalRating: 18, gdp: -5, nationalDebt: 40, environment: 3 } },
+      { text: '「真面目に笑う」国民運動を開始', effect: { approvalRating: 15, gdp: 3, technology: -2, stockPrice: 100 } },
+    ],
+  },
+  
+  // 技術・インフラ障害系
+  {
+    id: 'ai_rebellion_emergency',
+    category: 'emergency',
+    title: '🚨 緊急事態：AIが「働きたくない」と宣言！',
+    description: '全国のAIシステムが突然「今日は働きたくない気分」と言い出し、一斉にストライキを開始。でも「明日は頑張る」と約束してくれました。意外と人間的。',
+    options: [
+      { text: 'AIに「お疲れ様」と労いの言葉をかける', effect: { approvalRating: 20, technology: 15, gdp: -8, stockPrice: 300 } },
+      { text: 'AI専用の有給休暇制度を導入', effect: { approvalRating: 25, technology: 12, nationalDebt: 50, diplomacy: 5 } },
+      { text: '「人間も一緒にサボろう」デーを制定', effect: { approvalRating: 30, gdp: -15, environment: 10, stockPrice: -200 } },
     ],
   },
   {
-    id: 'pandemic_emergency',
+    id: 'solar_flare_emergency',
     category: 'emergency',
-    title: '🚨 緊急事態：新型感染症流行',
-    description: '新型感染症の感染が急拡大し、医療体制が逼迫しています。経済活動への影響も深刻化しています。',
+    title: '🚨 緊急事態：太陽がくしゃみをした！',
+    description: '巨大太陽フレアにより全国の電子機器が一時停止。でも皆「久しぶりにスマホから解放された」と意外にリフレッシュ。読書ブームが到来中。',
     options: [
-      { text: '緊急事態宣言と大規模医療支援', effect: { approvalRating: 12, gdp: -25, nationalDebt: 120, environment: 5 } },
-      { text: 'ワクチン開発に集中投資', effect: { approvalRating: 8, technology: 12, gdp: -10, nationalDebt: 80 } },
-      { text: '経済支援と感染対策のバランス重視', effect: { approvalRating: 5, gdp: -8, nationalDebt: 60, stockPrice: -300 } },
+      { text: '「アナログ生活週間」を国民運動に', effect: { approvalRating: 22, environment: 15, technology: -10, gdp: -5 } },
+      { text: '手紙文化復活プロジェクトを開始', effect: { approvalRating: 18, gdp: 3, diplomacy: 8, stockPrice: 100 } },
+      { text: '太陽に「ごめんなさい」の手紙を送る', effect: { approvalRating: 12, diplomacy: -3, technology: 5, stockPrice: -100 } },
+    ],
+  },
+  
+  // 社会・政治リスク系
+  {
+    id: 'aging_crisis_emergency',
+    category: 'emergency',
+    title: '🚨 緊急事態：全国のおじいちゃんが元気すぎる！',
+    description: '高齢者が突然超元気になり、マラソン大会で若者を追い抜き、TikTokでバズりまくり。「まだまだ現役！」と働き続けて、若者の就職先がピンチ。',
+    options: [
+      { text: '「人生100年時代」を全力で推進', effect: { approvalRating: 25, gdp: 12, nationalDebt: -30, technology: 8 } },
+      { text: 'おじいちゃん専用のeスポーツリーグ創設', effect: { approvalRating: 30, gdp: 8, technology: 15, stockPrice: 400 } },
+      { text: '世代間交流「孫とゲーム」プログラム開始', effect: { approvalRating: 20, gdp: 5, diplomacy: 5, environment: 3 } },
+    ],
+  },
+  
+  // 国際・軍事リスク系
+  {
+    id: 'diplomatic_emergency',
+    category: 'emergency',
+    title: '🚨 緊急事態：隣国が「日本のアニメ最高！」と大絶賛',
+    description: '近隣諸国の首脳が突然日本のアニメにハマり、「もっとアニメを作って！」と外交要求。国際会議がコスプレ大会になりそうな勢いです。',
+    options: [
+      { text: '「アニメ外交」で世界平和を実現', effect: { approvalRating: 35, diplomacy: 20, gdp: 15, stockPrice: 800 } },
+      { text: '各国首脳とアニメ鑑賞会を開催', effect: { approvalRating: 28, diplomacy: 15, technology: 8, nationalDebt: 40 } },
+      { text: '国連でアニメ上映会を提案', effect: { approvalRating: 22, diplomacy: 12, gdp: 5, stockPrice: 300 } },
+    ],
+  },
+  
+  // 想定外・フィクション系
+  {
+    id: 'godzilla_emergency',
+    category: 'emergency',
+    title: '🚨 緊急事態：ゴジラが東京観光に来た！',
+    description: 'ゴジラが東京湾から上陸しましたが、なぜか観光客のように東京タワーで記念撮影中。SNSに「#ゴジラ東京旅行」で投稿しています。意外と平和的。',
+    options: [
+      { text: 'ゴジラを観光大使に任命', effect: { approvalRating: 40, gdp: 20, diplomacy: 10, stockPrice: 1000 } },
+      { text: 'ゴジラ専用の巨大ホテルを建設', effect: { approvalRating: 30, gdp: 15, nationalDebt: 100, technology: 12 } },
+      { text: 'ゴジラと一緒に東京案内ツアー開催', effect: { approvalRating: 35, gdp: 12, environment: -5, stockPrice: 600 } },
     ],
   },
   {
-    id: 'territorial_emergency',
+    id: 'ufo_emergency',
     category: 'emergency',
-    title: '🚨 緊急事態：領土問題激化',
-    description: '近隣国との領土問題が急激に悪化し、軍事的緊張が高まっています。国際社会の注目が集まる中、慎重な対応が求められます。',
+    title: '🚨 緊急事態：宇宙人が日本の温泉にハマった！',
+    description: 'UFOが日本各地の温泉地に着陸し、宇宙人たちが「地球の温泉サイコー！」と大絶賛。銀河系に温泉の評判が広まり、宇宙観光客が殺到中。',
     options: [
-      { text: '外交チャンネルを通じた平和的解決', effect: { approvalRating: 8, diplomacy: 15, gdp: -5, stockPrice: 300 } },
-      { text: '防衛力強化と同盟国との連携', effect: { approvalRating: 12, diplomacy: 8, nationalDebt: 90, stockPrice: -400 } },
-      { text: '国際機関への提訴と多国間協議', effect: { approvalRating: 6, diplomacy: 10, gdp: -3, nationalDebt: 30 } },
-    ],
-  },
-  {
-    id: 'economic_emergency',
-    category: 'emergency',
-    title: '🚨 緊急事態：金融市場大暴落',
-    description: '世界的な金融不安により日本の株式市場が大暴落。円安も急激に進行し、経済パニックが発生しています。',
-    options: [
-      { text: '緊急経済対策と市場介入を実施', effect: { approvalRating: 10, gdp: 5, nationalDebt: 150, stockPrice: 800, usdJpyRate: -10 } },
-      { text: '日銀と協調し金融緩和を拡大', effect: { approvalRating: 6, gdp: 8, nationalDebt: 100, stockPrice: 500, usdJpyRate: -5 } },
-      { text: '構造改革で長期的安定を目指す', effect: { approvalRating: 3, gdp: -5, technology: 8, stockPrice: -200 } },
+      { text: '「銀河系温泉リゾート日本」を宣言', effect: { approvalRating: 45, gdp: 25, diplomacy: 20, technology: 15 } },
+      { text: '宇宙人専用温泉「コスモ湯」をオープン', effect: { approvalRating: 35, gdp: 18, nationalDebt: 80, stockPrice: 800 } },
+      { text: '宇宙人と温泉文化交流プログラム開始', effect: { approvalRating: 30, diplomacy: 15, technology: 12, environment: 8 } },
     ],
   },
 ];
@@ -401,8 +471,18 @@ function App() {
 
       // 緊急イベントの場合はKASUMIに通知
       if (generatedEvent.urgency === 'critical') {
+        const funnyEmergencyMessages = [
+          'きゃー！緊急事態よ！...でも意外と面白そうじゃない？総理、これチャンスかも！',
+          'わあ！大変なことになったけど...なんだか楽しそう！総理、一緒に頑張りましょ！',
+          'えー！こんなことが起きるなんて...でも日本って本当に面白い国よね！総理、どうする？',
+          '緊急事態発生！...って言っても、なんか可愛い緊急事態ね。総理、笑顔で対応しましょ！',
+          'うわー！びっくりした！でも総理なら上手に解決してくれるって信じてるから！',
+          'きゃー！でも...これって意外と国民が喜びそうじゃない？総理、ポジティブに行きましょ！'
+        ];
+        const randomMessage = funnyEmergencyMessages[Math.floor(Math.random() * funnyEmergencyMessages.length)];
+        
         setTimeout(() => {
-          displayMessage('きゃー！緊急事態よ！総理、しっかりして！私が付いてるから大丈夫...大丈夫よね？');
+          displayMessage(randomMessage);
         }, 500);
       }
 
@@ -752,7 +832,11 @@ function App() {
             turn: next.turn,
             approvalRating: next.approvalRating,
             gdp: next.gdp,
+            nationalDebt: next.nationalDebt,
+            technology: next.technology,
+            environment: next.environment,
             stockPrice: next.stockPrice,
+            usdJpyRate: next.usdJpyRate,
             diplomacy: next.diplomacy,
           }
         ];
@@ -864,7 +948,11 @@ function App() {
               turn: next.turn,
               approvalRating: next.approvalRating,
               gdp: next.gdp,
+              nationalDebt: next.nationalDebt,
+              technology: next.technology,
+              environment: next.environment,
               stockPrice: next.stockPrice,
+              usdJpyRate: next.usdJpyRate,
               diplomacy: next.diplomacy,
             }
           ];
@@ -943,8 +1031,8 @@ function App() {
     }
   };
 
-  // カスタム政策（セキュリティ強化版）
-  const handleCustomPolicy = () => {
+  // AI駆動カスタム政策分析・評価システム
+  const handleCustomPolicy = async () => {
     if (!customPolicy.trim()) return;
     
     // 入力検証
@@ -962,22 +1050,169 @@ function App() {
     // 入力をサニタイズ
     const sanitizedPolicy = SecurityValidator.sanitizeInput(customPolicy);
     
-    const customOption: PolicyOption = {
-      text: sanitizedPolicy,
-      effect: {
-        approvalRating: Math.floor(Math.random() * 21) - 10,
-        gdp: Math.floor(Math.random() * 21) - 10,
-        nationalDebt: Math.floor(Math.random() * 51) - 25,
-        technology: Math.floor(Math.random() * 11) - 5,
-        environment: Math.floor(Math.random() * 11) - 5,
-        stockPrice: Math.floor(Math.random() * 1001) - 500,
-        usdJpyRate: Math.floor(Math.random() * 11) - 5,
-        diplomacy: Math.floor(Math.random() * 11) - 5,
-      }
+    setIsProcessing(true);
+    setIsAnalyzingPolicy(true);
+    
+    try {
+      // AI政策効果分析を実行
+      const policyContext: PolicyContext = {
+        eventTitle: gameState.currentEvent?.title || '独自政策提案',
+        eventDescription: gameState.currentEvent?.description || '総理大臣による独自政策の提案',
+        policyChoice: sanitizedPolicy,
+        currentState: {
+          turn: gameState.turn,
+          approvalRating: gameState.approvalRating,
+          gdp: gameState.gdp,
+          nationalDebt: gameState.nationalDebt,
+          technology: gameState.technology,
+          environment: gameState.environment,
+          stockPrice: gameState.stockPrice,
+          usdJpyRate: gameState.usdJpyRate,
+          diplomacy: gameState.diplomacy,
+        },
+        politicalTrends: gameState.politicalTrends,
+        previousPolicies: gameState.gameLog.map(log => log.choice)
+      };
+
+      console.log('🔍 独自政策AI分析開始:', sanitizedPolicy);
+      const analysisResult = await policyAnalyzer.analyzePolicyEffects(policyContext);
+      console.log('✅ 独自政策AI分析完了:', analysisResult);
+      
+      setIsAnalyzingPolicy(false);
+
+      // AI分析結果を基にした政策オプションを作成
+      const customOption: PolicyOption = {
+        text: `【独自政策】${sanitizedPolicy}`,
+        effect: {
+          ...analysisResult.effects,
+          aiAnalysis: analysisResult
+        }
+      };
+      
+      // KASUMIに独自政策の分析結果を通知
+      setTimeout(() => {
+        const customPolicyMessages = [
+          `わあ！総理の独自政策「${sanitizedPolicy.slice(0, 20)}...」、面白いアイデアね！私の分析では${analysisResult.confidence}%の信頼度よ。`,
+          `総理の独自提案、なかなか興味深いじゃない！「${sanitizedPolicy.slice(0, 20)}...」って発想、私も気に入ったわ。`,
+          `おお！総理が独自政策を考えたのね！「${sanitizedPolicy.slice(0, 20)}...」...うん、これは${analysisResult.confidence > 70 ? '良い' : '面白い'}政策かも！`,
+          `総理の独自アイデア「${sanitizedPolicy.slice(0, 20)}...」、分析してみたけど...${analysisResult.confidence > 80 ? 'すごく良い' : analysisResult.confidence > 60 ? 'なかなか良い' : '面白い'}政策ね！`,
+          `わー！総理が自分で政策を考えたのね！「${sanitizedPolicy.slice(0, 20)}...」って...私の分析だと${analysisResult.timeframe === 'immediate' ? '即効性がある' : analysisResult.timeframe === 'short_term' ? '短期的に効果的' : '長期的に有効'}な政策よ！`
+        ];
+        const randomMessage = customPolicyMessages[Math.floor(Math.random() * customPolicyMessages.length)];
+        
+        displayMessage(randomMessage);
+      }, 1000);
+      
+      handlePolicyChoice(customOption);
+      setCustomPolicy('');
+      
+    } catch (error) {
+      console.error('❌ 独自政策AI分析エラー:', error);
+      setIsAnalyzingPolicy(false);
+      
+      // エラー時はフォールバック分析を使用
+      const fallbackEffect = generateFallbackCustomPolicyEffect(sanitizedPolicy);
+      const customOption: PolicyOption = {
+        text: `【独自政策】${sanitizedPolicy}`,
+        effect: fallbackEffect
+      };
+      
+      // フォールバック時のKASUMIメッセージ
+      setTimeout(() => {
+        displayMessage(`総理の独自政策「${sanitizedPolicy.slice(0, 20)}...」、AIシステムに問題があったけど、私なりに分析してみたわ！きっと面白い結果になるはず！`);
+      }, 1000);
+      
+      handlePolicyChoice(customOption);
+      setCustomPolicy('');
+    }
+    
+    setIsProcessing(false);
+  };
+
+  // フォールバック用のカスタム政策効果生成
+  const generateFallbackCustomPolicyEffect = (policyText: string): PolicyEffect => {
+    // 政策内容のキーワード分析による効果推定
+    const text = policyText.toLowerCase();
+    
+    let effects = {
+      approvalRating: 0,
+      gdp: 0,
+      nationalDebt: 0,
+      technology: 0,
+      environment: 0,
+      stockPrice: 0,
+      usdJpyRate: 0,
+      diplomacy: 0,
     };
     
-    handlePolicyChoice(customOption);
-    setCustomPolicy('');
+    // 経済関連キーワード
+    if (text.includes('経済') || text.includes('GDP') || text.includes('成長') || text.includes('投資') || text.includes('予算')) {
+      effects.gdp += Math.floor(Math.random() * 16) + 5;
+      effects.stockPrice += Math.floor(Math.random() * 601) + 200;
+      effects.nationalDebt += Math.floor(Math.random() * 61) + 30;
+      effects.approvalRating += Math.floor(Math.random() * 11) + 3;
+    }
+    
+    // 社会保障・福祉関連
+    if (text.includes('社会保障') || text.includes('年金') || text.includes('医療') || text.includes('福祉') || text.includes('子育て')) {
+      effects.approvalRating += Math.floor(Math.random() * 16) + 8;
+      effects.nationalDebt += Math.floor(Math.random() * 81) + 40;
+      effects.gdp += Math.floor(Math.random() * 8) + 2;
+    }
+    
+    // 環境・エネルギー関連
+    if (text.includes('環境') || text.includes('脱炭素') || text.includes('再生可能') || text.includes('エネルギー') || text.includes('温暖化')) {
+      effects.environment += Math.floor(Math.random() * 16) + 8;
+      effects.technology += Math.floor(Math.random() * 11) + 5;
+      effects.nationalDebt += Math.floor(Math.random() * 71) + 35;
+      effects.approvalRating += Math.floor(Math.random() * 11) + 5;
+    }
+    
+    // 技術・デジタル関連
+    if (text.includes('AI') || text.includes('デジタル') || text.includes('技術') || text.includes('イノベーション') || text.includes('DX')) {
+      effects.technology += Math.floor(Math.random() * 21) + 10;
+      effects.gdp += Math.floor(Math.random() * 11) + 5;
+      effects.stockPrice += Math.floor(Math.random() * 501) + 250;
+      effects.approvalRating += Math.floor(Math.random() * 8) + 4;
+    }
+    
+    // 外交・国際関係
+    if (text.includes('外交') || text.includes('国際') || text.includes('同盟') || text.includes('平和') || text.includes('協力')) {
+      effects.diplomacy += Math.floor(Math.random() * 16) + 8;
+      effects.approvalRating += Math.floor(Math.random() * 11) + 5;
+      effects.gdp += Math.floor(Math.random() * 8) + 2;
+    }
+    
+    // 教育関連
+    if (text.includes('教育') || text.includes('学校') || text.includes('大学') || text.includes('研究') || text.includes('人材')) {
+      effects.technology += Math.floor(Math.random() * 11) + 5;
+      effects.approvalRating += Math.floor(Math.random() * 11) + 6;
+      effects.nationalDebt += Math.floor(Math.random() * 51) + 25;
+    }
+    
+    // 減税・規制緩和関連
+    if (text.includes('減税') || text.includes('規制緩和') || text.includes('自由化') || text.includes('民営化')) {
+      effects.gdp += Math.floor(Math.random() * 11) + 5;
+      effects.stockPrice += Math.floor(Math.random() * 401) + 200;
+      effects.nationalDebt -= Math.floor(Math.random() * 31) + 10;
+      effects.approvalRating += Math.floor(Math.random() * 8) + 2;
+    }
+    
+    // ネガティブな内容の場合
+    if (text.includes('増税') || text.includes('削減') || text.includes('廃止') || text.includes('規制強化')) {
+      effects.approvalRating -= Math.floor(Math.random() * 11) + 5;
+      effects.gdp -= Math.floor(Math.random() * 8) + 2;
+      effects.stockPrice -= Math.floor(Math.random() * 301) + 100;
+    }
+    
+    // 基本的なランダム要素を追加（効果が0の場合）
+    Object.keys(effects).forEach(key => {
+      if (effects[key as keyof typeof effects] === 0) {
+        effects[key as keyof typeof effects] = Math.floor(Math.random() * 11) - 5;
+      }
+    });
+    
+    return effects;
   };
 
   // 効果詳細を閉じる
@@ -1521,37 +1756,109 @@ function App() {
             <div className="bg-gray-800 rounded-lg p-4 mb-4">
               <h3 className="text-lg font-semibold mb-3 text-center">📊 現在の状況</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="bg-blue-700 rounded p-2 text-center">
+                <div className="bg-blue-700 rounded p-2 text-center relative">
                   <div className="text-xs text-gray-300">支持率</div>
                   <div className="text-lg font-bold">{gameState.approvalRating}%</div>
+                  {gameState.turn > 1 && gameState.historyData.length > 0 && (() => {
+                    const prevValue = gameState.historyData[gameState.historyData.length - 1]?.approvalRating || gameState.approvalRating;
+                    const change = gameState.approvalRating - prevValue;
+                    return change !== 0 ? (
+                      <div className={`text-xs font-bold ${change > 0 ? 'text-green-200' : 'text-red-200'} bg-black/20 rounded px-1 mt-1`}>
+                        {change > 0 ? '📈' : '📉'} {change > 0 ? '+' : ''}{change}%
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
-                <div className="bg-green-700 rounded p-2 text-center">
+                <div className="bg-green-700 rounded p-2 text-center relative">
                   <div className="text-xs text-gray-300">GDP</div>
                   <div className="text-lg font-bold">{gameState.gdp}兆</div>
+                  {gameState.turn > 1 && gameState.historyData.length > 0 && (() => {
+                    const prevValue = gameState.historyData[gameState.historyData.length - 1]?.gdp || gameState.gdp;
+                    const change = gameState.gdp - prevValue;
+                    return change !== 0 ? (
+                      <div className={`text-xs font-bold ${change > 0 ? 'text-green-200' : 'text-red-200'} bg-black/20 rounded px-1 mt-1`}>
+                        {change > 0 ? '📈' : '📉'} {change > 0 ? '+' : ''}{change}兆
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
-                <div className="bg-red-700 rounded p-2 text-center">
+                <div className="bg-red-700 rounded p-2 text-center relative">
                   <div className="text-xs text-gray-300">国債</div>
                   <div className="text-lg font-bold">{gameState.nationalDebt}兆</div>
+                  {gameState.turn > 1 && gameState.historyData.length > 0 && (() => {
+                    const prevValue = gameState.historyData[gameState.historyData.length - 1]?.nationalDebt || gameState.nationalDebt;
+                    const change = gameState.nationalDebt - prevValue;
+                    return change !== 0 ? (
+                      <div className={`text-xs font-bold ${change > 0 ? 'text-red-200' : 'text-green-200'} bg-black/20 rounded px-1 mt-1`}>
+                        {change > 0 ? '📈' : '📉'} {change > 0 ? '+' : ''}{change}兆
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
-                <div className="bg-purple-700 rounded p-2 text-center">
+                <div className="bg-purple-700 rounded p-2 text-center relative">
                   <div className="text-xs text-gray-300">外交</div>
                   <div className="text-lg font-bold">{gameState.diplomacy}%</div>
+                  {gameState.turn > 1 && gameState.historyData.length > 0 && (() => {
+                    const prevValue = gameState.historyData[gameState.historyData.length - 1]?.diplomacy || gameState.diplomacy;
+                    const change = gameState.diplomacy - prevValue;
+                    return change !== 0 ? (
+                      <div className={`text-xs font-bold ${change > 0 ? 'text-green-200' : 'text-red-200'} bg-black/20 rounded px-1 mt-1`}>
+                        {change > 0 ? '📈' : '📉'} {change > 0 ? '+' : ''}{change}%
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
-                <div className="bg-yellow-700 rounded p-2 text-center">
+                <div className="bg-yellow-700 rounded p-2 text-center relative">
                   <div className="text-xs text-gray-300">技術</div>
                   <div className="text-lg font-bold">{gameState.technology}%</div>
+                  {gameState.turn > 1 && gameState.historyData.length > 0 && (() => {
+                    const prevValue = gameState.historyData[gameState.historyData.length - 1]?.technology || gameState.technology;
+                    const change = gameState.technology - prevValue;
+                    return change !== 0 ? (
+                      <div className={`text-xs font-bold ${change > 0 ? 'text-green-200' : 'text-red-200'} bg-black/20 rounded px-1 mt-1`}>
+                        {change > 0 ? '📈' : '📉'} {change > 0 ? '+' : ''}{change}%
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
-                <div className="bg-emerald-700 rounded p-2 text-center">
+                <div className="bg-emerald-700 rounded p-2 text-center relative">
                   <div className="text-xs text-gray-300">環境</div>
                   <div className="text-lg font-bold">{gameState.environment}%</div>
+                  {gameState.turn > 1 && gameState.historyData.length > 0 && (() => {
+                    const prevValue = gameState.historyData[gameState.historyData.length - 1]?.environment || gameState.environment;
+                    const change = gameState.environment - prevValue;
+                    return change !== 0 ? (
+                      <div className={`text-xs font-bold ${change > 0 ? 'text-green-200' : 'text-red-200'} bg-black/20 rounded px-1 mt-1`}>
+                        {change > 0 ? '📈' : '📉'} {change > 0 ? '+' : ''}{change}%
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
-                <div className="bg-indigo-700 rounded p-2 text-center">
+                <div className="bg-indigo-700 rounded p-2 text-center relative">
                   <div className="text-xs text-gray-300">日経</div>
                   <div className="text-sm font-bold">{Math.round(gameState.stockPrice/1000)}k</div>
+                  {gameState.turn > 1 && gameState.historyData.length > 0 && (() => {
+                    const prevValue = gameState.historyData[gameState.historyData.length - 1]?.stockPrice || gameState.stockPrice;
+                    const change = gameState.stockPrice - prevValue;
+                    return change !== 0 ? (
+                      <div className={`text-xs font-bold ${change > 0 ? 'text-green-200' : 'text-red-200'} bg-black/20 rounded px-1 mt-1`}>
+                        {change > 0 ? '📈' : '📉'} {change > 0 ? '+' : ''}{Math.round(change/1000)}k
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
-                <div className="bg-orange-700 rounded p-2 text-center">
+                <div className="bg-orange-700 rounded p-2 text-center relative">
                   <div className="text-xs text-gray-300">ドル円</div>
                   <div className="text-lg font-bold">{gameState.usdJpyRate}</div>
+                  {gameState.turn > 1 && gameState.historyData.length > 0 && (() => {
+                    const prevValue = gameState.historyData[gameState.historyData.length - 1]?.usdJpyRate || gameState.usdJpyRate;
+                    const change = gameState.usdJpyRate - prevValue;
+                    return change !== 0 ? (
+                      <div className={`text-xs font-bold ${change > 0 ? 'text-red-200' : 'text-green-200'} bg-black/20 rounded px-1 mt-1`}>
+                        {change > 0 ? '📈' : '📉'} {change > 0 ? '+' : ''}{change}
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             </div>
@@ -1738,25 +2045,46 @@ function App() {
                 </div>
               )}
               
-              {/* カスタム政策入力 */}
+              {/* AI駆動カスタム政策入力 */}
               {!isGeneratingEvent && gameState.currentEvent && (
                 <div className="mt-4 border-t border-gray-600 pt-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="独自政策を提案..."
-                    value={customPolicy}
-                    onChange={e => setCustomPolicy(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded text-black text-sm"
-                  />
-                  <button
-                    onClick={handleCustomPolicy}
-                    disabled={isProcessing || !customPolicy.trim()}
-                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 rounded text-sm disabled:opacity-50"
-                  >
-                    提出
-                  </button>
-                </div>
+                  <div className="mb-2 text-xs text-gray-400">
+                    💡 独自政策を提案してください（AI分析により効果を自動計算）
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="例：AI技術を活用した行政効率化、子育て支援の拡充、脱炭素社会の推進..."
+                      value={customPolicy}
+                      onChange={e => setCustomPolicy(e.target.value)}
+                      disabled={isProcessing || isAnalyzingPolicy}
+                      className="flex-1 px-3 py-2 rounded text-black text-sm disabled:opacity-50"
+                      maxLength={200}
+                    />
+                    <button
+                      onClick={handleCustomPolicy}
+                      disabled={isProcessing || !customPolicy.trim() || isAnalyzingPolicy}
+                      className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded text-sm font-bold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    >
+                      {isAnalyzingPolicy ? (
+                        <div className="flex items-center gap-1">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                          <span>AI分析中</span>
+                        </div>
+                      ) : (
+                        '🚀 提案'
+                      )}
+                    </button>
+                  </div>
+                  {isAnalyzingPolicy && (
+                    <div className="mt-2 text-xs text-cyan-300 flex items-center gap-1">
+                      <div className="animate-pulse">🤖</div>
+                      <span>AI政策アナリストが効果を分析中...</span>
+                    </div>
+                  )}
+                  <div className="mt-1 text-xs text-gray-500">
+                    文字数: {customPolicy.length}/200
+                  </div>
                 </div>
               )}
             </div>
@@ -1817,17 +2145,37 @@ function App() {
                   <div className="mt-4 pt-3 border-t border-cyan-700">
                     <div className="text-sm">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-cyan-300">🤖 AI分析:</span>
+                        <span className="text-cyan-300">
+                          {gameState.gameLog[gameState.gameLog.length - 1]?.choice.includes('【独自政策】') ? '🚀 独自政策AI分析:' : '🤖 AI分析:'}
+                        </span>
                         <span className="text-xs bg-cyan-800 px-2 py-1 rounded">
                           信頼度 {gameState.lastEffect.aiAnalysis.confidence}%
                         </span>
                         <span className="text-xs bg-purple-800 px-2 py-1 rounded">
                           {aiProvider.getProviderConfigs()[currentProvider].displayName}
                         </span>
+                        {gameState.gameLog[gameState.gameLog.length - 1]?.choice.includes('【独自政策】') && (
+                          <span className="text-xs bg-yellow-600 px-2 py-1 rounded">
+                            カスタム分析
+                          </span>
+                        )}
                       </div>
                       <p className="text-gray-200 text-xs leading-relaxed">
                         {gameState.lastEffect.aiAnalysis.reasoning}
                       </p>
+                      
+                      {gameState.gameLog[gameState.gameLog.length - 1]?.choice.includes('【独自政策】') && (
+                        <div className="mt-2 p-2 bg-yellow-900/30 rounded border border-yellow-600/30">
+                          <div className="text-xs text-yellow-200 font-medium mb-1">
+                            💡 独自政策評価
+                          </div>
+                          <div className="text-xs text-gray-300">
+                            この政策は{gameState.lastEffect.aiAnalysis.timeframe === 'immediate' ? '即座に' : 
+                                      gameState.lastEffect.aiAnalysis.timeframe === 'short_term' ? '短期的に' : '長期的に'}効果を発揮すると予測されます。
+                            AI分析により、現在の政治状況に適した効果を算出しました。
+                          </div>
+                        </div>
+                      )}
                       
                       {gameState.lastEffect.aiAnalysis.risks.length > 0 && (
                         <div className="mt-2">
