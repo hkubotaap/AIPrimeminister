@@ -58,6 +58,9 @@ const ScoreSubmissionModal: React.FC<ScoreSubmissionModalProps> = ({
             approvalRating: gameState.approvalRating,
             gdp: gameState.gdp,
             nationalDebt: gameState.nationalDebt,
+            diplomacy: gameState.diplomacy,
+            environment: gameState.environment,
+            technology: gameState.technology,
             rank
           }
         })

@@ -29,7 +29,10 @@
       "Bash(npx vite build:*)",
       "Bash(node:*)",
       "mcp__playwright__browser_snapshot",
-      "mcp__playwright__browser_type"
+      "mcp__playwright__browser_type",
+      "WebFetch(domain:ai-driven-prime-minister-simulator-nxa45amy7.vercel.app)",
+      "Bash(git checkout:*)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []
