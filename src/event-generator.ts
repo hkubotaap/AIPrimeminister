@@ -1,5 +1,12 @@
 // AI駆動イベント生成システム
 import { AIProviderManager } from './ai-provider';
+import {
+  StaticQuestion,
+  getRandomQuestion,
+  getQuestionsByCategory,
+  getQuestionsByDifficulty
+} from './static-questions';
+import { DataLoader } from './data-loader';
 
 export interface EventGenerationContext {
   currentState: {
@@ -42,6 +49,15 @@ export interface GeneratedEvent {
     text: string;
     type: 'conservative' | 'progressive' | 'moderate' | 'radical' | 'liberal' | 'nationalist' | 'populist' | 'technocratic' | 'centrist' | 'extremist';
     politicalStance: 'right' | 'left' | 'center' | 'far-right' | 'far-left' | 'liberal' | 'conservative' | 'populist' | 'technocratic' | 'pragmatic';
+    policyDetails?: {
+      policyName?: string;
+      budget?: string;
+      duration?: string;
+      ministry?: string;
+      legalBasis?: string;
+      targetMetrics?: string;
+    };
+    theoreticalJustification?: string;
     expectedEffects: {
       approvalRating: number;
       gdp: number;
@@ -53,9 +69,27 @@ export interface GeneratedEvent {
       diplomacy: number;
     };
   }>;
-  backgroundInfo: string;
+  backgroundInfo: string | {
+    historicalContext: string;
+    currentSituation: string;
+    internationalComparison: string;
+    theoreticalRelevance?: string;
+    stakeholderPositions?: string;
+    researchImplications?: string;
+  };
+  academicElements?: {
+    theoreticalFramework: string;
+    comparativeCase: string;
+    evaluationCriteria: string[];
+    researchQuestions: string[];
+  };
   stakeholders: string[];
-  timeConstraint: string;
+  timeConstraint: string | {
+    urgency: string;
+    politicalDeadline?: string;
+    legislativeSchedule?: string;
+    administrativeConstraint?: string;
+  };
   aiGenerated: boolean;
   generationReason: string;
 }
@@ -64,15 +98,29 @@ export class EventGenerator {
   private aiProvider: AIProviderManager;
   private eventHistory: GeneratedEvent[] = [];
   private emergencyEventThreshold = 0.1;
+  private useStaticQuestions = true; // 静的設問を使用するかのフラグ
+  private staticQuestionProbability = 0.7; // 70%の確率で静的設問を使用
+  private usedStaticQuestionIds: Set<string> = new Set(); // 使用済み静的設問ID
+  private usedAIEventIds: Set<string> = new Set(); // 使用済みAI生成イベントID
+  private maxRetries = 5; // 重複回避の最大再試行回数
+  private dataLoader: DataLoader; // AI拡張機能付きデータローダー
 
-  constructor(aiProvider: AIProviderManager) {
+  constructor(aiProvider: AIProviderManager, useStaticQuestions = true, enableAIEnhancement = true) {
     this.aiProvider = aiProvider;
-    console.log('📰 AI駆動イベント生成システム初期化');
+    this.useStaticQuestions = useStaticQuestions;
+
+    // DataLoaderを初期化（AI拡張機能付き）
+    this.dataLoader = new DataLoader(aiProvider, enableAIEnhancement);
+
+    console.log('📰 AI駆動イベント生成システム初期化（AI拡張機能統合版）');
+    console.log(`📚 静的設問使用: ${useStaticQuestions ? 'ON' : 'OFF'}`);
+    console.log(`🤖 AI拡張機能: ${enableAIEnhancement ? 'ON' : 'OFF'}`);
+    console.log('🔒 重複防止システム: 有効');
   }
 
   // メインイベント生成関数
   async generateEvent(context: EventGenerationContext): Promise<GeneratedEvent> {
-    console.log('🎲 AI駆動イベント生成開始');
+    console.log('🎲 ハイブリッドイベント生成開始');
     console.log('ゲームフェーズ:', context.gamePhase);
     console.log('政治リスクレベル:', context.politicalTrends.riskLevel);
 
@@ -83,9 +131,16 @@ export class EventGenerator {
         return await this.generateEmergencyEvent(context);
       }
 
-      // 通常イベントの生成
+      // 静的設問 vs AI生成の選択
+      if (this.useStaticQuestions && Math.random() < this.staticQuestionProbability) {
+        console.log('📚 静的設問を使用');
+        return await this.generateStaticQuestionEvent(context);
+      }
+
+      // AI生成イベント
+      console.log('🤖 AI生成イベント使用');
       const currentProvider = this.aiProvider.getCurrentProvider();
-      
+
       switch (currentProvider) {
         case 'gemini':
           return await this.generateWithGemini(context);
@@ -95,7 +150,7 @@ export class EventGenerator {
           return this.generateFallbackEvent(context);
       }
     } catch (error) {
-      console.error('❌ AI駆動イベント生成エラー:', error);
+      console.error('❌ ハイブリッドイベント生成エラー:', error);
       return this.generateFallbackEvent(context);
     }
   }
@@ -136,6 +191,203 @@ export class EventGenerator {
     }
 
     return Math.random() < emergencyProbability;
+  }
+
+  // 静的設問イベント生成（重複防止機能付き）
+  private async generateStaticQuestionEvent(context: EventGenerationContext): Promise<GeneratedEvent> {
+    console.log('📚 既存の静的設問システムを使用（一時的）');
+    console.log(`🔍 使用済み静的設問数: ${this.usedStaticQuestionIds.size}`);
+    console.log(`🔍 外部からの使用済みID: ${context.usedEventIds?.length || 0}`);
+
+    // 外部から渡された使用済みIDも考慮
+    const allUsedIds = new Set([
+      ...this.usedStaticQuestionIds,
+      ...(context.usedEventIds || [])
+    ]);
+
+    // DataLoaderから利用可能な設問を取得（重複除外）
+    const allQuestions = this.dataLoader.getAllQuestions();
+    const availableQuestions = allQuestions.filter(question =>
+      !allUsedIds.has(question.id)
+    );
+
+    console.log(`📚 総設問数: ${allQuestions.length}`);
+    console.log(`✅ 利用可能設問数: ${availableQuestions.length}`);
+
+    if (availableQuestions.length === 0) {
+      console.log('⚠️ 未使用の設問がないため、リセットしてから選択');
+      this.resetUsedStaticQuestions();
+
+      // リセット後に再度取得
+      const resetQuestions = allQuestions.filter(question =>
+        !this.usedStaticQuestionIds.has(question.id)
+      );
+
+      if (resetQuestions.length === 0) {
+        console.log('⚠️ 設問が見つからないため、フォールバックイベントを使用');
+        return this.generateFallbackEvent(context);
+      }
+
+      // リセット後の利用可能設問から選択
+      const randomIndex = Math.floor(Math.random() * resetQuestions.length);
+      const selectedQuestion = resetQuestions[randomIndex];
+
+      // 使用済みリストに追加
+      this.usedStaticQuestionIds.add(selectedQuestion.id);
+
+      console.log(`📋 リセット後設問選択: ${selectedQuestion.title} (${selectedQuestion.category})`);
+      console.log(`📊 使用済み設問数: ${this.usedStaticQuestionIds.size}/${allQuestions.length}`);
+
+      // StaticQuestionをGeneratedEventに変換
+      const generatedEvent = this.convertStaticQuestionToGeneratedEvent(selectedQuestion, context);
+
+      // イベント履歴に追加
+      this.eventHistory.push(generatedEvent);
+
+      return generatedEvent;
+    }
+
+    // 利用可能な設問からランダム選択
+    const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+    const selectedQuestion = availableQuestions[randomIndex];
+
+    // 使用済みリストに追加
+    this.usedStaticQuestionIds.add(selectedQuestion.id);
+
+    console.log(`📋 設問選択: ${selectedQuestion.title} (${selectedQuestion.category})`);
+    if (selectedQuestion.contextualBackground) {
+      console.log('✨ AI拡張設問が選択されました');
+    }
+    console.log(`📊 使用済み設問数: ${this.usedStaticQuestionIds.size}/${allQuestions.length}`);
+
+    // StaticQuestionをGeneratedEventに変換
+    const generatedEvent = this.convertStaticQuestionToGeneratedEvent(selectedQuestion, context);
+
+    // イベント履歴に追加
+    this.eventHistory.push(generatedEvent);
+
+    return generatedEvent;
+  }
+
+  // DataLoaderから利用可能な設問を取得
+  private getAvailableDataLoaderQuestions(): StaticQuestion[] {
+    const allQuestions = this.dataLoader.getAllQuestions();
+    return allQuestions.filter(question =>
+      !this.usedStaticQuestionIds.has(question.id)
+    );
+  }
+
+  // フォールバック用：従来の静的設問取得
+  private getAvailableStaticQuestions(): StaticQuestion[] {
+    import('./static-questions').then(module => {
+      const { allStaticQuestions } = module;
+      return allStaticQuestions.filter((question: StaticQuestion) =>
+        !this.usedStaticQuestionIds.has(question.id)
+      );
+    });
+
+    // 一時的にgetRandomQuestionを使用
+    const randomQuestion = getRandomQuestion();
+    return randomQuestion ? [randomQuestion] : [];
+  }
+
+  // 全設問数を取得（DataLoader優先）
+  private getTotalStaticQuestionCount(): number {
+    if (this.dataLoader.getTotalQuestionCount() > 0) {
+      return this.dataLoader.getTotalQuestionCount();
+    }
+    const { allStaticQuestions } = require('./static-questions');
+    return allStaticQuestions.length;
+  }
+
+  // 使用済み静的設問IDをリセット
+  private resetUsedStaticQuestions(): void {
+    this.usedStaticQuestionIds.clear();
+    console.log('🔄 静的設問使用履歴をリセットしました');
+  }
+
+  // 静的設問をGeneratedEventフォーマットに変換
+  private convertStaticQuestionToGeneratedEvent(
+    staticQuestion: StaticQuestion,
+    context: EventGenerationContext
+  ): GeneratedEvent {
+    // 選択肢を適切なフォーマットに変換
+    const convertedOptions = staticQuestion.options.map(option => ({
+      text: option.text,
+      type: this.convertStaticTypeToEventType(option.type, option.stance),
+      politicalStance: this.convertStaticStanceToEventStance(option.stance),
+      expectedEffects: option.expectedEffects
+    }));
+
+    // 学術的背景情報の構造化
+    const backgroundInfo = {
+      historicalContext: `${staticQuestion.category}分野の重要課題として継続的に議論されている`,
+      currentSituation: staticQuestion.description,
+      internationalComparison: `類似の政策課題は先進国でも共通して検討されている`,
+      theoreticalRelevance: staticQuestion.academicElements.theoreticalFramework,
+      stakeholderPositions: `主要関係者: ${staticQuestion.academicElements.keyStakeholders.join('、')}`,
+      researchImplications: '大学生の政治学研究・学習に適した学術的価値の高い課題'
+    };
+
+    return {
+      id: staticQuestion.id,
+      title: `📋 ${staticQuestion.title}`,
+      description: staticQuestion.description + (staticQuestion.context ? `\n\n${staticQuestion.context}` : ''),
+      category: `academic_${staticQuestion.category}`,
+      urgency: 'medium',
+      complexity: staticQuestion.difficulty === 'advanced' ? 'complex' : 'moderate',
+      options: convertedOptions,
+      backgroundInfo: backgroundInfo,
+      academicElements: staticQuestion.academicElements,
+      stakeholders: staticQuestion.academicElements.keyStakeholders,
+      timeConstraint: {
+        urgency: staticQuestion.timeConstraint,
+        politicalDeadline: '政策検討・実施のタイミング',
+        legislativeSchedule: '関連法制度の審議スケジュール',
+        administrativeConstraint: '行政機関での実施体制構築'
+      },
+      aiGenerated: false,
+      generationReason: `静的設問データベースより選出（難易度: ${staticQuestion.difficulty}、分野: ${staticQuestion.category}）`
+    };
+  }
+
+  // 静的設問のタイプをイベントタイプに変換
+  private convertStaticTypeToEventType(
+    staticType: 'realistic' | 'humorous' | 'extreme',
+    stance: string
+  ): 'conservative' | 'progressive' | 'moderate' | 'radical' | 'liberal' | 'nationalist' | 'populist' | 'technocratic' | 'centrist' | 'extremist' {
+    if (staticType === 'extreme') return 'extremist';
+    if (staticType === 'humorous') return 'populist';
+
+    // realistic の場合は stance に基づいて決定
+    switch (stance) {
+      case 'conservative': return 'conservative';
+      case 'liberal': return 'liberal';
+      case 'progressive': return 'progressive';
+      case 'populist': return 'populist';
+      case 'technocratic': return 'technocratic';
+      case 'centrist':
+      case 'moderate':
+      default:
+        return 'moderate';
+    }
+  }
+
+  // 静的設問のstanceをイベントstanceに変換
+  private convertStaticStanceToEventStance(
+    stance: string
+  ): 'right' | 'left' | 'center' | 'far-right' | 'far-left' | 'liberal' | 'conservative' | 'populist' | 'technocratic' | 'pragmatic' {
+    switch (stance) {
+      case 'conservative': return 'conservative';
+      case 'liberal': return 'liberal';
+      case 'progressive': return 'left';
+      case 'populist': return 'populist';
+      case 'technocratic': return 'technocratic';
+      case 'centrist':
+      case 'moderate':
+      default:
+        return 'center';
+    }
   }
 
   // Gemini APIを使用したイベント生成
@@ -218,124 +470,166 @@ export class EventGenerator {
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
 
-    return `あなたは日本の政治・経済・社会情勢の専門家AIです。現在の状況に基づいて、極めてリアルで専門的な政治イベントを生成してください。
+    return `あなたは政治学・経済学・公共政策学の専門教育者AIです。大学生の政治学習・研究に最適な、学術的で教育価値の高い政治設問を生成してください。
 
-## 現在の政治状況
-- ターン: ${context.currentState.turn}/${context.currentState.maxTurns} (${phaseText})
-- 支持率: ${context.currentState.approvalRating}% (${context.politicalTrends.approvalTrend})
-- GDP: ${context.currentState.gdp}兆円 (${context.politicalTrends.economicTrend})
-- 国債残高: ${context.currentState.nationalDebt}兆円 (対GDP比: ${Math.round((context.currentState.nationalDebt / context.currentState.gdp) * 100)}%)
-- 科学技術力: ${context.currentState.technology}%
-- 環境指標: ${context.currentState.environment}%
-- 日経平均: ${context.currentState.stockPrice}円
-- ドル円レート: ${context.currentState.usdJpyRate}円
-- 外交関係: ${context.currentState.diplomacy}%
-- 政治リスクレベル: ${context.politicalTrends.riskLevel}
+## 📊 現在の政治状況（データ分析）
+- 政権期: ${context.currentState.turn}/${context.currentState.maxTurns}ターン (${phaseText})
+- 内閣支持率: ${context.currentState.approvalRating}% (トレンド: ${context.politicalTrends.approvalTrend})
+- 実質GDP: ${context.currentState.gdp}兆円 (経済動向: ${context.politicalTrends.economicTrend})
+- 国債残高: ${context.currentState.nationalDebt}兆円 (対GDP比率: ${Math.round((context.currentState.nationalDebt / context.currentState.gdp) * 100)}%)
+- 科学技術競争力指数: ${context.currentState.technology}/100
+- 環境パフォーマンス指数: ${context.currentState.environment}/100
+- 日経平均株価: ${context.currentState.stockPrice}円
+- USD/JPY為替レート: ${context.currentState.usdJpyRate}円
+- 外交関係総合指数: ${context.currentState.diplomacy}/100
+- 政治リスク評価: ${context.politicalTrends.riskLevel}レベル
 
-## 時期・背景情報
-- 現在時期: ${currentYear}年${currentMonth}月 (${seasonText})
-- 国際情勢: ${context.globalContext.internationalTensions}
-- 世界経済情勢: ${context.globalContext.economicClimate}
-- 国内政治圧力: ${context.globalContext.domesticPressure}
-- ゲームフェーズ: ${phaseText}
+## 現実的な政治課題テーマ（以下から選択または組み合わせ）
 
-## 過去の政策履歴
-- 過去のイベント: ${context.previousEvents.length > 0 ? context.previousEvents.slice(-3).join(', ') : 'なし'}
-- 過去の政策選択: ${context.previousChoices.length > 0 ? context.previousChoices.slice(-3).join(', ') : 'なし'}
+### 外交・安全保障
+- 憲法9条改正と自衛隊明記、防衛費GDP比2％増額、台湾有事対応、北方領土交渉、核共有議論、沖縄基地問題、中国海洋進出、北朝鮮拉致問題、武器輸出三原則
 
-## 生成要求
-現在の状況に適した高度に専門的で現実的な政治イベントを生成してください。以下の条件を満たすこと：
+### 内政・司法・治安  
+- 少年法適用年齢、通信傍受拡大、死刑制度存廃、入管長期収容、検察独立性、GPS監視、警察権限、宗教法人課税、公務員制度改革、マイナンバー活用
 
-### 必須要件
-1. **現実性**: 実際に起こりうる日本の政治・経済・社会問題
-2. **専門性**: 具体的な省庁名、法律名、制度名、統計データを含む
-3. **時宜性**: 現在の季節、政治情勢、国際情勢に適合
-4. **継続性**: 過去の政策選択の結果として自然に発生する問題
-5. **複雑性**: 複数の省庁、利害関係者、国際的要因が絡む複合的問題
-6. **具体性**: 予算規模、実施期間、法的根拠、数値目標を明記
+### 財政・経済
+- 消費税率引き上げ、国債償還計画、ベーシックインカム、外国人労働者、富裕層課税、公共事業、規制緩和、カジノ推進、最低賃金、非正規雇用
 
-### 選択肢要件（必ず10個生成）
-各選択肢は以下の政治的立場を反映し、150文字以上の詳細な説明を含むこと：
+### 社会保障・福祉
+- 年金支給年齢70歳、医療費自己負担、子育て社会負担、外国人介護士、高齢者優遇見直し、出産奨励金、障害者雇用、生活保護改革、無戸籍児、医師偏在
 
-1. **右派・保守**: 市場原理重視、規制緩和、伝統的価値観
-2. **左派・リベラル**: 社会保障拡充、政府介入、平等主義
-3. **中道・穏健**: バランス重視、漸進的改革、現実的解決
-4. **ポピュリスト**: 国民感情重視、直接給付、既存エリート批判
-5. **テクノクラート**: データ駆動、科学的根拠、効率性追求
-6. **ナショナリスト**: 国益優先、自国第一、主権重視
-7. **プラグマティスト**: 実用性重視、結果重視、柔軟な政策運営
-8. **急進・革新**: 抜本的変革、既存制度改革、大胆な構造改革
-9. **国際協調派**: 多国間協力、グローバル視点、国際基準準拠
-10. **地方分権派**: 地方自治重視、権限移譲、地域主導政策
+### 教育・文化・科学技術
+- 大学無償化、教員働き方改革、AI雇用規制、学術会議、学校統廃合、英語教育、道徳教育、私学助成、職業訓練、芸術文化予算
 
-### 各選択肢の必須要素
-- 具体的な政策名・法律名
-- 予算規模（兆円・億円単位）
-- 実施期間（年月単位）
-- 担当省庁（主管・関連省庁）
-- 法的根拠（新法制定・既存法改正）
-- 定量的目標（GDP成長率、失業率、CO2削減率等）
-- 国際的影響・他国事例
+### 環境・エネルギー
+- 原発再稼働、脱炭素vs産業、再エネ景観問題、炭素税、森林買収規制、水資源管理、温室ガス目標、ごみ発電、EV推進、プラスチック規制
 
-### 専門用語の活用
-- 経済: GDP、CPI、失業率、財政乗数、クラウディングアウト、量的緩和、YCC
-- 行政: 政令、省令、通達、特別会計、一般会計、補正予算、概算要求
-- 法律: 基本法、特別法、議員立法、内閣提出法案、修正案
-- 国際: WTO、IMF、OECD、G7、G20、二国間協定、多国間枠組み、FTA、EPA
+### 農林水産・食料
+- 食料自給率向上、農協改革、漁業資源管理、米減反政策、遺伝子組換え、農産物関税、農地企業参入、有機農業、漁獲制限、食料備蓄
 
-以下のJSON形式で返してください：
+### インフラ・国土交通
+- 高速道路無料化、地方鉄道維持、都市再開発、バリアフリー、無人運転、新幹線整備、空港統廃合、首都機能移転、道路民営化、インフラ更新
+
+### 防災・危機管理
+- 首都機能分散、災害復旧費分担、感染症行動制限、原発事故対応、水害対策、南海トラフ対策、防災教育、災害ボランティア、ワクチン義務化、外国軍支援
+
+### 行政運営・統治
+- 衆院定数削減、参院廃止、首相公選制、選挙権16歳、被選挙権年齢、政党助成金、官僚依存、デジタル庁、地方交付税、国民投票制度
+
+## 🎓 大学生レベル政治設問の設計原則
+
+### 📚 学術的設問構造（研究対応版）
+1. **問題提起**（100-150文字）: 政策課題の社会的背景と緊急性
+2. **データ・統計**（50-80文字）: 客観的数値による現状把握
+3. **理論的枠組み**（80-120文字）: 政治学・経済学理論との関連
+4. **利害関係者分析**（各40-60文字）: 主要アクターの立場・動機・制約
+5. **政策選択肢**（10個）: 理論的・実務的に検証可能なオプション
+6. **評価軸**（30-50文字）: 政策評価の判断基準
+
+### 🔬 学習価値の最大化ポイント
+- **理論との接続**: 政治学・経済学理論の実践的応用
+- **複合的思考**: 単一領域を超えた学際的アプローチ
+- **データ重視**: 統計・調査に基づく実証的判断
+- **比較分析**: 他国事例・歴史的類例との対比
+- **長期視点**: 短期効果と長期影響の両面考慮
+- **制約の明示**: 政治的・経済的・制度的制約の理解
+
+### 📊 設問例の参考構造
+
+**🏭 原発問題**
+- 背景: 資源小国→原発推進→福島事故→方針転換
+- 利害関係者: 政府vs電力会社vs住民vs国際社会
+- ジレンマ: 電力安定vs安全性、CO2削減vs脱原発
+
+**👶 少子化問題**  
+- 背景: 出生率1.2台→人口減少→社会保障危機
+- 利害関係者: 若者vs高齢者vs企業vs国際社会
+- ジレンマ: 子育て支援vs財政負担、価値観vs政策
+
+**🛡️ 防衛費問題**
+- 背景: GDP比1%抑制→安保環境悪化→NATO基準2%
+- 利害関係者: 防衛省vs財務省vs市民vs米国
+- ジレンマ: 安全保障vs生活保障、国際要請vs財政制約
+
+## 生成指示
+以下の形式で、シンプルで面白い政治設問を生成してください：
+
+### 必須要素
+1. **タイトル**: 「○○をどうする？」形式（20文字以内）
+2. **背景**: 問題の経緯を2-3行で簡潔に（100文字程度）
+3. **利害関係者**: 4-5つの立場を箇条書き（各30文字程度）
+4. **選択肢**: 10個の多様な政策オプション
+
+### 選択肢の学術的分類（政治学理論基準）
+1. **新自由主義型**: 市場機能・規制緩和・民営化重視（例：法人減税、金融緩和）
+2. **社会民主主義型**: 再分配・社会保障・労働者保護重視（例：最低賃金上昇、累進課税）
+3. **保守主義型**: 伝統・安定・漸進的変化重視（例：既存制度維持、慎重改革）
+4. **ポピュリズム型**: 直接民意・反エリート・国民優先（例：直接給付、住民投票）
+5. **テクノクラート型**: 専門知識・技術革新・合理性重視（例：AI活用、データ重視）
+6. **権威主義型**: 強力指導・秩序維持・効率性重視（例：行政権拡大、規律強化）
+7. **国際協調型**: 多国間協力・国際基準・グローバル統合（例：国際機関連携）
+8. **ナショナリズム型**: 国家主権・自国優先・独立性重視（例：保護主義、主権回復）
+9. **地方分権型**: 補完性原理・多層統治・地域自治（例：権限移譲、財源移転）
+10. **参加民主主義型**: 市民参加・熟議・協働統治（例：市民会議、協働ガバナンス）
+
+## 🎯 大学生レベル学術設問の出力形式
+
+JSON形式で以下を必須として返してください：
+
 {
-  "id": "ai_generated_YYYYMMDD_XXX",
-  "title": "具体的なイベントタイトル（30文字以内）",
-  "description": "詳細な状況説明（300-500文字、問題の背景・関係者の立場・時代背景・統計データを含む）",
-  "category": "economy|diplomacy|social|environment|technology|security|disaster",
-  "urgency": "low|medium|high|critical",
-  "complexity": "moderate|complex",
+  "id": "academic_politics_${currentYear}${currentMonth}_XXX",
+  "title": "📋 [政策分野] 具体的で学術的な設問タイトル（50文字以内）",
+  "description": "【問題状況】現状と課題の客観的記述（150文字）\\n【統計データ】関連する数値・調査結果（80文字）\\n【理論的背景】政治学・経済学理論との関連（100文字）\\n\\n利害関係者分析：\\n・[主体1]：立場・動機・制約（50文字）\\n・[主体2]：立場・動機・制約（50文字）\\n・[主体3]：立場・動機・制約（50文字）\\n・[主体4]：立場・動機・制約（50文字）\\n・[主体5]：立場・動機・制約（50文字）",
+  "category": "academic_[外交|内政|経済|社会|環境|技術]",
+  "urgency": "medium",
+  "complexity": "complex",
+  "academicElements": {
+    "theoreticalFramework": "適用される政治学・経済学理論",
+    "comparativeCase": "他国・歴史的類例との比較分析",
+    "evaluationCriteria": ["効率性", "公平性", "持続可能性", "政治的実現可能性", "国際整合性"],
+    "researchQuestions": ["この政策の効果測定方法は？", "ステークホルダー間の利害調整は？", "長期的影響の予測は？"]
+  },
   "options": [
     {
-      "text": "【右派・保守】具体的な政策名を含む詳細な説明（150文字以上）",
-      "type": "conservative",
-      "politicalStance": "right",
+      "text": "【[理論型]・[具体的政策名]】法的根拠・実施体制・予算規模・期間・効果指標を明記した詳細政策（120文字以内）",
+      "type": "academic_[新自由主義|社会民主主義|保守主義|ポピュリズム|テクノクラート|権威主義|国際協調|ナショナリズム|地方分権|参加民主主義]",
+      "politicalStance": "理論に基づく政治的立場",
       "policyDetails": {
-        "policyName": "具体的な法律名・制度名",
-        "budget": "具体的な予算額",
-        "duration": "実施期間",
-        "ministry": "担当省庁",
-        "legalBasis": "法的根拠",
-        "targetMetrics": "定量的目標"
+        "legalBasis": "政策の法的根拠",
+        "implementationBody": "実施機関・体制",
+        "budgetScale": "予算規模（兆円単位）",
+        "timeframe": "実施期間・スケジュール",
+        "targetIndicators": "達成目標・評価指標",
+        "riskFactors": "実施上のリスク要因"
       },
+      "theoreticalJustification": "この選択肢の政治学・経済学的根拠",
       "expectedEffects": {
-        "approvalRating": 数値(-20から+20),
-        "gdp": 数値(-50から+50),
-        "nationalDebt": 数値(-100から+100),
-        "technology": 数値(-15から+15),
-        "environment": 数値(-15から+15),
-        "stockPrice": 数値(-2000から+2000),
-        "usdJpyRate": 数値(-10から+10),
-        "diplomacy": 数値(-15から+15)
+        "approvalRating": -20から+20の数値,
+        "gdp": -50から+50の数値,
+        "nationalDebt": -100から+100の数値,
+        "technology": -15から+15の数値,
+        "environment": -15から+15の数値,
+        "stockPrice": -2000から+2000の数値,
+        "usdJpyRate": -10から+10の数値,
+        "diplomacy": -15から+15の数値
       }
     }
-    // ... 残り9個の選択肢も同様の形式
   ],
   "backgroundInfo": {
-    "historicalContext": "過去の類似政策とその結果",
-    "currentSituation": "現在の状況（統計データ含む）",
-    "internationalComparison": "他国の事例",
-    "stakeholderPositions": "各ステークホルダーの立場"
+    "historicalContext": "この問題の歴史的経緯・先例",
+    "currentSituation": "現在の状況・緊急性の根拠",
+    "internationalComparison": "他国での類似事例・成功/失敗例",
+    "theoreticalRelevance": "関連する政治学・経済学理論の適用"
   },
+  "stakeholders": ["政府", "国民", "企業", "地方自治体", "国際社会", "専門家・学者", "メディア"],
   "timeConstraint": {
-    "urgency": "対応期限",
-    "politicalDeadline": "政治的期限（国会会期、予算編成等）"
+    "urgency": "政治的決定期限",
+    "legislativeSchedule": "国会・議会スケジュール",
+    "administrativeConstraint": "行政手続き上の制約"
   },
-  "generationReason": "このイベントを生成した理由（現在の政治状況との関連）"
-}
-
-## 重要な注意点
-- 必ず10個すべての選択肢を生成すること
-- 各選択肢は政治的立場が明確に異なること
-- 予算規模、期間、省庁、法的根拠を必ず明記すること
-- 現在の日本の政治制度・社会情勢に即した内容とすること
-- 選択肢は実際の政治家が提案しうる現実的な内容とすること`;
+  "aiGenerated": true,
+  "generationReason": "大学生の政治学研究・学習に最適化した学術的設問として生成"
+}`;
   }
 
   // 緊急イベント生成
@@ -352,49 +646,87 @@ export class EventGenerator {
     const selectedEmergency = emergencyTypes[Math.floor(Math.random() * emergencyTypes.length)];
     const selectedExample = selectedEmergency.examples[Math.floor(Math.random() * selectedEmergency.examples.length)];
     
-    const prompt = `🚨 面白緊急事態発生！以下の条件で、深刻すぎず、テンポよく楽しめる緊急政治イベントを生成してください：
+    const prompt = `🚨 緊急政治課題：大学生の危機管理・政策分析学習として、学術的価値の高い緊急政治設問を生成してください：
 
-## 緊急事態情報
-- 緊急事態タイプ: ${selectedEmergency.name} (${selectedExample})
-- 現在の政治状況: 支持率${context.currentState.approvalRating}%、リスクレベル${context.politicalTrends.riskLevel}
-- 政権フェーズ: ${this.getPhaseText(context.gamePhase)}
+## 📊 緊急事態の政治分析コンテキスト
+- 危機事象タイプ: ${selectedEmergency.name} (${selectedExample})
+- 政治情勢: 内閣支持率${context.currentState.approvalRating}%、政治リスク${context.politicalTrends.riskLevel}レベル
+- 政権段階: ${this.getPhaseText(context.gamePhase)} (統治経験・政治資源の観点)
+- 政策履歴: ${context.previousChoices.slice(-2).join(', ') || '政策実績なし'}
 
-## 🎭 面白緊急事態の作り方
-**重要**: 深刻になりすぎず、ユーモアとテンポの良さを重視してください！
+## 🎓 危機管理学習の学術的要求水準
 
-### 文体・トーン
-- 軽快で親しみやすい文章
-- 「でも実は...」「意外にも...」などの展開
-- 国民が「なんだそれ！」と笑えるレベル
-- 絶望的にならず、希望や面白さを含む
+### 📚 分析フレームワーク
+1. **危機発生メカニズム**（120文字）
+   - 構造的要因・引き金要因の分析
+   - 類似危機の歴史的パターン比較
+   - 政策失敗・制度的脆弱性の関連
 
-### 緊急事態の例
-- 「ゴジラが観光に来た」
-- 「AIが働きたくないと言い出した」
-- 「宇宙人が温泉にハマった」
-- 「全国のおじいちゃんが急に元気になった」
-- 「隣国が日本のアニメに夢中になった」
+2. **影響波及分析**（180文字）
+   - 直接的被害・間接的影響の定量評価
+   - セクター別・地域別影響の差異
+   - 時系列での影響拡大プロセス
+   - 国際的波及・相互依存性
 
-### 選択肢の作り方
-各選択肢は以下の要素を含む：
-1. **ユーモラスな対応**: 「一緒に○○しよう」「○○大使に任命」
-2. **前向きな解決策**: 問題を機会に変える発想
-3. **国民が笑顔になる**: 「なるほど！」と思える政策
-4. **適度な政治効果**: ゲームバランスを保つ
+3. **政治アクター分析**（各60文字）
+   - 政府：危機対応能力・政治的制約・責任論
+   - 国民：被害認識・期待・政治的行動
+   - 企業：損失規模・復旧戦略・政府依存度
+   - 自治体：現場対応・中央との関係・地域格差
+   - 国際社会：支援意向・外交的思惑・評価視点
+   - 専門家：技術的評価・政策提言・責任の所在
 
-### 政治的立場（面白版）
-1. **お祭り騒ぎ派**: 「これは面白い！」と楽しむ
-2. **観光活用派**: 「観光資源にしよう」
-3. **国民一体派**: 「みんなで一緒に対応」
-4. **ユーモア外交派**: 「笑いで解決」
-5. **新文化創造派**: 「新しい文化を作ろう」
-6. **科学的好奇心派**: 「研究してみよう」
-7. **国際アピール派**: 「世界に発信しよう」
-8. **伝統活用派**: 「日本らしさで対応」
-9. **技術革新派**: 「新技術で解決」
-10. **平和共存派**: 「仲良くやろう」
+4. **政策選択のディレンマ構造**（80文字）
+   - 効率性vs公平性の価値対立
+   - 短期安定化vs長期構造改革の時間軸葛藤
+   - 国内対応vs国際協調の戦略選択
 
-面白くてテンポの良い緊急事態イベントを生成してください！`;
+### 緊急事態の現実的テーマ例
+- **自然災害**: 南海トラフ地震、首都直下地震、スーパー台風、富士山噴火
+- **経済危機**: 金融市場暴落、円急落、銀行破綻、インフレ急騰
+- **外交危機**: 台湾有事、北朝鮮ミサイル、領土問題激化、同盟国対立
+- **安全保障**: 大規模サイバー攻撃、テロ脅威、情報漏洩、軍事挑発
+- **社会危機**: パンデミック、大規模デモ、インフラ停止、食料危機
+- **技術危機**: AI暴走、システム障害、通信遮断、宇宙デブリ
+
+### 危機対応の政治学分類（必ず10個の学術的選択肢生成）
+
+1. **権威主義的危機管理**: 強権発動・中央集権・迅速決定（例：緊急事態宣言、行政権限拡大）
+2. **民主主義的熟議**: 透明性・説明責任・合意形成重視（例：国民対話、議会承認）
+3. **福祉国家的保護**: 社会保障・再分配・弱者配慮（例：生活保障、格差是正）
+4. **新自由主義的市場重視**: 効率性・競争・民間活力（例：規制緩和、市場メカニズム）
+5. **国際協調・多国間主義**: グローバル連携・制度協力（例：国際機関、多国間枠組み）
+6. **国家主義・自力救済**: 主権重視・独立対応・内政不干渉（例：国産技術、自主防衛）
+7. **テクノクラート・専門知重視**: 科学的根拠・合理的判断（例：データ重視、専門家会議）
+8. **地方分権・補完性**: 現場主導・多層協力・地域特性（例：自治体権限、広域連携）
+9. **予防原則・長期視点**: リスク回避・持続可能性（例：構造改革、制度見直し）
+10. **政治的安定・超党派**: 政権維持・国民統合・政治休戦（例：挙国一致、大連立）
+
+### 各選択肢の必須要素
+- 具体的な対応策・政策名
+- 予算規模・人員配置
+- 実施期間・対応スケジュール
+- 担当組織・責任体制
+- 期待される効果・リスク
+- 国民・国際社会への影響
+
+## 生成要求
+以下のJSON形式で、教育的価値の高い緊急政治イベントを生成してください：
+
+{
+  "id": "emergency_${selectedEmergency.type}_YYYYMMDD_XXX",
+  "title": "🚨 緊急事態：具体的で現実的なタイトル",
+  "description": "【背景】歴史的経緯と発生要因（100文字）\\n【現状】具体的被害と緊急性（150文字）\\n\\n利害関係者：\\n・政府：対応方針と政治的責任\\n・国民：生活影響と要求\\n・企業：経済損失と期待\\n・国際社会：支援と期待\\n・専門家：技術的見解",
+  "category": "emergency",
+  "urgency": "critical",
+  "complexity": "complex",
+  "options": [10個の多様な緊急対応選択肢],
+  "backgroundInfo": "緊急事態の政治的・歴史的背景",
+  "stakeholders": ["政府", "国民", "企業", "国際社会", "専門家"],
+  "timeConstraint": "緊急対応期限（72時間以内等）",
+  "aiGenerated": true,
+  "generationReason": "AI駆動緊急事態生成"
+}`;
 
     try {
       const currentProvider = this.aiProvider.getCurrentProvider();
@@ -434,12 +766,21 @@ export class EventGenerator {
     }
   }
 
-  // イベント検証と正規化
+  // イベント検証と正規化（重複防止機能付き）
   private validateAndNormalizeEvent(event: any, context: EventGenerationContext): GeneratedEvent {
     // IDの生成（重複回避）
-    const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomSuffix = Math.random().toString(36).substr(2, 3);
-    const generatedId = 'ai_generated_' + timestamp + '_' + randomSuffix;
+    let generatedId: string;
+    let attempts = 0;
+
+    do {
+      const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const randomSuffix = Math.random().toString(36).substr(2, 3);
+      generatedId = 'ai_generated_' + timestamp + '_' + randomSuffix;
+      attempts++;
+    } while (this.usedAIEventIds.has(generatedId) && attempts < this.maxRetries);
+
+    // 重複チェック後、使用済みリストに追加
+    this.usedAIEventIds.add(generatedId);
 
     // 効果値の正規化（現在の状況を考慮した動的調整）
     const normalizeEffects = (effects: any) => {
@@ -492,59 +833,133 @@ export class EventGenerator {
       };
     });
 
-    // 背景情報の構造化
-    const processedBackgroundInfo = typeof event.backgroundInfo === 'object' ? 
+    // 学術的背景情報の構造化
+    const processedBackgroundInfo = typeof event.backgroundInfo === 'object' ?
       event.backgroundInfo : {
-        historicalContext: event.backgroundInfo || '現在の政治状況に基づく課題',
-        currentSituation: `支持率${context.currentState.approvalRating}%、GDP${context.currentState.gdp}兆円の状況下での政治課題`,
-        internationalComparison: '他国の類似事例を参考に政策を検討',
-        stakeholderPositions: '各ステークホルダーの立場を考慮した政策選択が必要'
+        historicalContext: event.backgroundInfo || '政治学・政策学研究における類似課題の分析',
+        currentSituation: `内閣支持率${context.currentState.approvalRating}%、実質GDP${context.currentState.gdp}兆円、政治リスク${context.politicalTrends.riskLevel}下での学術的政策分析課題`,
+        internationalComparison: '比較政治学的観点による他国制度・政策の成功失敗事例分析',
+        theoreticalRelevance: '政治学・経済学・公共政策学理論の実践的適用と検証',
+        stakeholderPositions: '政治アクター理論に基づく利害関係者の戦略的行動分析',
+        researchImplications: '大学生の政治学研究・政策分析能力向上に資する学習課題'
       };
+
+    // 学術的要素の追加
+    const academicElements = event.academicElements || {
+      theoreticalFramework: '政治学・経済学・公共政策学の複合的理論適用',
+      comparativeCase: '先進民主主義国における類似政策の比較制度分析',
+      evaluationCriteria: ['政策効率性', '社会公平性', '政治的実現可能性', '長期持続可能性', '国際整合性'],
+      researchQuestions: [
+        'この政策選択の政治学的意義は何か？',
+        'ステークホルダー間の利害調整メカニズムは？',
+        '政策効果の測定・評価方法は？',
+        '他国との比較における日本の特殊性は？'
+      ]
+    };
 
     return {
       id: generatedId,
-      title: event.title || '新たな政治課題',
-      description: event.description || '現在の政治状況において新たな課題が浮上しました。適切な政策判断が求められています。',
-      category: event.category || 'general',
+      title: event.title || '📋 新たな政治学研究課題',
+      description: event.description || '現在の政治状況において学術的分析価値の高い政策課題が浮上しました。政治学・経済学理論を適用した多面的な政策判断分析が求められています。',
+      category: event.category || 'academic_general',
       urgency: event.urgency || 'medium',
-      complexity: event.complexity || 'moderate',
+      complexity: event.complexity || 'complex',
       options: processedOptions,
       backgroundInfo: processedBackgroundInfo,
-      stakeholders: Array.isArray(event.stakeholders) ? event.stakeholders : ['政府', '国民', '企業', '地方自治体'],
-      timeConstraint: typeof event.timeConstraint === 'object' ? 
+      academicElements: academicElements,
+      stakeholders: Array.isArray(event.stakeholders) ? event.stakeholders :
+        ['政府', '国民', '企業', '地方自治体', '国際社会', '専門家・学者', 'メディア'],
+      timeConstraint: typeof event.timeConstraint === 'object' ?
         event.timeConstraint : {
-          urgency: event.timeConstraint || '適切なタイミングで',
-          politicalDeadline: '次回国会会期まで'
+          urgency: event.timeConstraint || '政策決定の適切なタイミング',
+          politicalDeadline: '国会審議・行政手続きスケジュール',
+          legislativeSchedule: '立法府での議論・承認プロセス',
+          administrativeConstraint: '行政府での実施・執行上の制約'
         },
       aiGenerated: true,
-      generationReason: event.generationReason || `現在の政治状況（支持率${context.currentState.approvalRating}%、${context.politicalTrends.riskLevel}リスク）に基づいて生成`
+      generationReason: event.generationReason ||
+        `大学生の政治学研究・学習に最適化：現在の政治状況（内閣支持率${context.currentState.approvalRating}%、政治リスク${context.politicalTrends.riskLevel}）を学術的分析コンテキストとして活用`
     };
   }
 
-  // フォールバックイベント生成（10個の選択肢）
+  // フォールバックイベント生成（重複防止機能付き・10個の選択肢）
   private generateFallbackEvent(context: EventGenerationContext): GeneratedEvent {
     const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const randomSuffix = Math.random().toString(36).substr(2, 3);
 
     const fallbackEvents = [
       {
+        id: 'economy_reform',
         title: '経済政策の抜本的見直し',
         description: `現在の支持率${context.currentState.approvalRating}%、GDP${context.currentState.gdp}兆円の状況下で、政府の経済政策の抜本的見直しが求められています。国債残高${context.currentState.nationalDebt}兆円、日経平均${context.currentState.stockPrice}円という経済指標を踏まえ、持続可能な成長戦略の策定が急務となっています。`,
         category: 'economy'
       },
       {
+        id: 'diplomatic_strategy',
         title: '外交・安全保障政策の戦略的転換',
         description: `外交関係${context.currentState.diplomacy}%の現状において、国際情勢の変化に対応した外交・安全保障政策の戦略的転換が必要です。近隣諸国との関係調整、同盟国との連携強化、多国間外交の推進など、複合的なアプローチが求められています。`,
         category: 'diplomacy'
       },
       {
+        id: 'technology_nation',
         title: '科学技術立国への政策転換',
         description: `技術力${context.currentState.technology}%の現状を踏まえ、AI、量子コンピューター、バイオテクノロジーなど先端技術分野での国際競争力強化が急務です。研究開発投資、人材育成、産学官連携の抜本的強化により、科学技術立国としての地位確立を目指す必要があります。`,
         category: 'technology'
+      },
+      {
+        id: 'social_security_reform',
+        title: '社会保障制度の持続可能性確保',
+        description: `高齢化社会の進展により、社会保障制度の持続可能性が問われています。年金制度改革、医療費抑制、介護保険制度の見直しなど、世代間公平を考慮した制度設計が急務となっています。`,
+        category: 'social'
+      },
+      {
+        id: 'environmental_policy',
+        title: '脱炭素社会実現に向けた環境政策',
+        description: `環境指数${context.currentState.environment}%の現状において、2050年カーボンニュートラル目標達成に向けた具体的な政策展開が求められています。再生可能エネルギー拡大、産業構造転換、国民生活の変革が必要です。`,
+        category: 'environment'
+      },
+      {
+        id: 'education_innovation',
+        title: '教育システムのデジタル変革',
+        description: `急速なデジタル化時代に対応した教育システムの抜本的変革が必要です。ICT教育の充実、教員の働き方改革、大学入試制度改革など、未来人材育成に向けた包括的な政策が求められています。`,
+        category: 'education'
+      },
+      {
+        id: 'regional_revitalization',
+        title: '地方創生と東京一極集中の是正',
+        description: `人口減少と東京一極集中が地方経済に深刻な影響を与えています。デジタル田園都市構想、企業の地方移転促進、観光立国戦略など、地方創生の新たなアプローチが必要です。`,
+        category: 'regional'
+      },
+      {
+        id: 'healthcare_reform',
+        title: '医療制度改革と健康立国戦略',
+        description: `超高齢社会における医療制度の持続可能性確保が急務です。医師の偏在解消、医療DX推進、予防医療の充実など、国民の健康と医療制度の両立を図る政策が求められています。`,
+        category: 'healthcare'
       }
     ];
 
-    const selectedEvent = fallbackEvents[Math.floor(Math.random() * fallbackEvents.length)];
+    // 使用済みIDを除外してイベントを選択
+    const availableEvents = fallbackEvents.filter(event => {
+      // このイベントタイプが既に使用されているかチェック
+      const isEventTypeUsed = context.usedEventIds.some(usedId =>
+        usedId.includes(`fallback_${event.id}_`)
+      );
+      return !isEventTypeUsed;
+    });
+
+    // 利用可能なイベントがない場合は全てリセット
+    let selectedEvent;
+    if (availableEvents.length === 0) {
+      console.log('⚠️ 全フォールバックイベントが使用済み、リセットして選択');
+      selectedEvent = { ...fallbackEvents[Math.floor(Math.random() * fallbackEvents.length)] };
+      selectedEvent.id = `fallback_${selectedEvent.id}_${timestamp}_reset`;
+    } else {
+      selectedEvent = availableEvents[Math.floor(Math.random() * availableEvents.length)];
+    }
+
+    // ユニークIDを生成
+    const uniqueId = `fallback_${selectedEvent.id}_${timestamp}_${randomSuffix}`;
+    console.log(`🎲 フォールバックイベント生成: ${uniqueId}`);
 
     // 10個の多様な政治的立場を反映した選択肢
     const generateTenOptions = () => {
@@ -605,7 +1020,7 @@ export class EventGenerator {
     };
 
     return {
-      id: 'fallback_' + timestamp + '_' + randomSuffix,
+      id: uniqueId,
       title: selectedEvent.title,
       description: selectedEvent.description,
       category: selectedEvent.category,
@@ -737,19 +1152,104 @@ export class EventGenerator {
     return [...this.eventHistory];
   }
 
-  // 統計情報取得
+  // 統計情報取得（重複防止機能統計を含む）
   getStatistics() {
     const stats = {
       totalEvents: this.eventHistory.length,
       categoryDistribution: {} as Record<string, number>,
       averageComplexity: 0,
-      emergencyEventCount: 0
+      emergencyEventCount: 0,
+      staticQuestionsUsed: this.usedStaticQuestionIds.size,
+      aiEventsUsed: this.usedAIEventIds.size,
+      totalStaticQuestions: this.getTotalStaticQuestionCount(),
+      staticQuestionProgress: `${this.usedStaticQuestionIds.size}/${this.getTotalStaticQuestionCount()}`,
+      duplicationPrevention: {
+        staticQuestionsRemaining: this.getAvailableStaticQuestions().length,
+        canGenerateUniqueEvents: this.getAvailableStaticQuestions().length > 0 || this.useStaticQuestions
+      }
     };
 
     this.eventHistory.forEach(event => {
       stats.categoryDistribution[event.category] = (stats.categoryDistribution[event.category] || 0) + 1;
+      if (event.urgency === 'critical') {
+        stats.emergencyEventCount++;
+      }
     });
 
     return stats;
+  }
+
+  // 全履歴をリセット（新しいゲーム開始時など）
+  public resetAllHistory(): void {
+    this.usedStaticQuestionIds.clear();
+    this.usedAIEventIds.clear();
+    this.eventHistory = [];
+    console.log('🔄 全イベント履歴をリセットしました');
+  }
+
+  // 静的設問のみリセット（AI生成は継続）
+  public resetStaticQuestionsOnly(): void {
+    this.resetUsedStaticQuestions();
+  }
+
+  // 使用済み設問の状況確認
+  public getUsageStatus(): {
+    staticQuestions: { used: number; total: number; remaining: number };
+    aiEvents: { used: number };
+  } {
+    const totalStatic = this.getTotalStaticQuestionCount();
+    const usedStatic = this.usedStaticQuestionIds.size;
+
+    return {
+      staticQuestions: {
+        used: usedStatic,
+        total: totalStatic,
+        remaining: totalStatic - usedStatic
+      },
+      aiEvents: {
+        used: this.usedAIEventIds.size
+      }
+    };
+  }
+
+  // カテゴリー別の利用可能設問数取得（DataLoader優先）
+  public getAvailableQuestionsByCategory(): Record<string, number> {
+    let availableQuestions: StaticQuestion[];
+
+    if (this.dataLoader.getTotalQuestionCount() > 0) {
+      availableQuestions = this.getAvailableDataLoaderQuestions();
+    } else {
+      availableQuestions = this.getAvailableStaticQuestions();
+    }
+
+    const categoryCount: Record<string, number> = {};
+
+    availableQuestions.forEach(question => {
+      categoryCount[question.category] = (categoryCount[question.category] || 0) + 1;
+    });
+
+    return categoryCount;
+  }
+
+  // DataLoaderの統計情報を取得
+  public getDataLoaderStatistics() {
+    return this.dataLoader.getEnhancementStatistics();
+  }
+
+  // DataLoaderでAI拡張機能の設定変更
+  public setAIEnhancementEnabled(enabled: boolean): void {
+    this.dataLoader.setAIEnhancementEnabled(enabled);
+  }
+
+  // バッチAI拡張処理の委譲
+  public async batchEnhanceQuestions(categoryFilter?: string): Promise<void> {
+    await this.dataLoader.batchEnhanceQuestions(categoryFilter);
+  }
+
+  // DataLoaderから設問を強制再読み込み
+  public async reloadQuestionData(): Promise<void> {
+    console.log('🔄 設問データの再読み込み開始...');
+    await this.dataLoader.loadAllQuestionFiles();
+    console.log('✅ 設問データの再読み込み完了');
   }
 }

@@ -119,72 +119,346 @@ interface EventTemplate {
   };
 }
 
-// 基本イベントテンプレート
+// 現実的で面白い政治イベントテンプレート
 const eventTemplates: EventTemplate[] = [
+  // 外交・安全保障
   {
-    id: 'yen_crisis_1',
-    category: 'economy',
-    title: '急激な円安進行（150円突破）',
-    description: 'ドル円レートが150円を突破し、輸入物価の上昇で国民生活に影響が出ています。日銀の金融政策との整合性も問われています。',
-    options: [
-      { text: '日銀と協調して為替介入を実施', effect: { approvalRating: 8, gdp: -5, nationalDebt: 30, usdJpyRate: -8, stockPrice: 500 } },
-      { text: '金利政策の見直しを日銀に要請', effect: { approvalRating: -3, gdp: -8, stockPrice: -800, usdJpyRate: -5 } },
-      { text: '市場の動向を注視し様子見', effect: { approvalRating: -5, usdJpyRate: 3, stockPrice: -200 } },
-    ],
-  },
-  {
-    id: 'semiconductor_1',
-    category: 'technology',
-    title: '半導体戦略と経済安全保障',
-    description: '世界的な半導体不足が続く中、台湾有事リスクも高まっています。日本の半導体戦略の見直しが急務です。',
-    options: [
-      { text: 'TSMC誘致など海外企業との連携強化', effect: { approvalRating: 6, technology: 12, gdp: 15, nationalDebt: 80, diplomacy: 5 } },
-      { text: '国内半導体産業への大規模投資', effect: { approvalRating: 4, technology: 8, gdp: 8, nationalDebt: 120, stockPrice: 300 } },
-      { text: '日米半導体協定の再構築', effect: { approvalRating: 3, diplomacy: 8, technology: 5, stockPrice: 200 } },
-    ],
-  },
-  {
-    id: 'aging_society_1',
-    category: 'social',
-    title: '少子高齢化と社会保障制度改革',
-    description: '出生率が1.3を下回り、社会保障費が急増しています。持続可能な制度設計が求められています。',
-    options: [
-      { text: '子育て支援予算を大幅拡充', effect: { approvalRating: 12, nationalDebt: 100, gdp: 5 } },
-      { text: '年金支給開始年齢の段階的引き上げ', effect: { approvalRating: -15, nationalDebt: -50, gdp: 3 } },
-      { text: '外国人労働者受け入れ拡大', effect: { approvalRating: -8, gdp: 8, diplomacy: 3 } },
-    ],
-  },
-  {
-    id: 'energy_1',
-    category: 'environment',
-    title: '脱炭素政策とエネルギー安全保障',
-    description: 'ロシア情勢を受けエネルギー価格が高騰。2050年カーボンニュートラル目標との両立が課題です。',
-    options: [
-      { text: '原発再稼働を積極推進', effect: { approvalRating: -5, environment: -8, gdp: 12, stockPrice: 400 } },
-      { text: '再生可能エネルギーへの大規模投資', effect: { approvalRating: 8, environment: 15, technology: 8, nationalDebt: 90 } },
-      { text: 'LNG調達先の多角化推進', effect: { approvalRating: 3, gdp: -3, diplomacy: 5, environment: -3 } },
-    ],
-  },
-  {
-    id: 'china_relations_1',
+    id: 'constitution_debate_1',
     category: 'diplomacy',
-    title: '中国との経済・外交関係',
-    description: '中国の台湾政策強化により日中関係が緊張。一方で経済的結びつきは依然として強い状況です。',
+    title: '憲法9条改正論議が再燃！自衛隊明記の是非',
+    description: '国際情勢の変化を受け、憲法9条に自衛隊を明記する改正案が与党内で浮上。戦後77年続いた平和憲法の転換点となるか。世論は賛否両論で真っ二つに分かれています。',
     options: [
-      { text: '対中制裁措置を段階的に強化', effect: { approvalRating: 5, diplomacy: -10, gdp: -12, stockPrice: -600 } },
-      { text: '経済関係維持しつつ外交圧力', effect: { approvalRating: 2, diplomacy: -3, gdp: -2 } },
-      { text: '日中首脳会談の早期実現を模索', effect: { approvalRating: -3, diplomacy: 8, gdp: 5, stockPrice: 300 } },
+      { text: '憲法改正を積極推進し、自衛隊の地位を明確化', effect: { approvalRating: -8, diplomacy: 12, nationalDebt: 80, stockPrice: -300 } },
+      { text: '現行憲法の解釈運用で対応し、改正は慎重に', effect: { approvalRating: 5, diplomacy: 3, gdp: 2, stockPrice: 100 } },
+      { text: '国民的議論を深めるため憲法審査会を活性化', effect: { approvalRating: 8, diplomacy: 5, nationalDebt: 20, technology: 3 } },
     ],
   },
   {
-    id: 'digital_1',
-    category: 'technology',
-    title: 'デジタル庁とDX推進',
-    description: 'マイナンバーカード普及率は向上したものの、システム障害が頻発。デジタル化の信頼回復が急務です。',
+    id: 'taiwan_crisis_1',
+    category: 'diplomacy',
+    title: '台湾海峡緊迫！日本の関与レベルが焦点',
+    description: '台湾周辺での軍事演習が激化し、有事の可能性が高まっています。日米同盟の枠組みで日本はどこまで関与すべきか。経済界からは慎重論、安保専門家からは積極論が出ています。',
     options: [
-      { text: 'システム刷新に追加予算投入', effect: { approvalRating: -2, technology: 8, nationalDebt: 50 } },
-      { text: '民間IT企業との連携強化', effect: { approvalRating: 4, technology: 12, gdp: 6, stockPrice: 200 } },
-      { text: 'デジタル庁の組織体制見直し', effect: { approvalRating: 6, technology: 5 } },
+      { text: '日米共同で台湾防衛に積極関与', effect: { approvalRating: -5, diplomacy: -15, gdp: -10, stockPrice: -800, nationalDebt: 100 } },
+      { text: '人道支援・後方支援に限定して関与', effect: { approvalRating: 8, diplomacy: -5, gdp: -3, stockPrice: -200, nationalDebt: 40 } },
+      { text: '外交的解決を最優先し、軍事関与は回避', effect: { approvalRating: 12, diplomacy: 5, gdp: 3, stockPrice: 200 } },
+    ],
+  },
+  {
+    id: 'defense_budget_1',
+    category: 'diplomacy',
+    title: '防衛費GDP比2％への増額論争',
+    description: 'NATO基準に合わせ防衛費をGDP比2％（約11兆円）に倍増する案が浮上。財政健全化との両立や、専守防衛からの転換への懸念も。国民の安全保障意識も変化しています。',
+    options: [
+      { text: '5年間でGDP比2％達成を明言', effect: { approvalRating: -3, diplomacy: 15, nationalDebt: 200, stockPrice: 300, technology: 8 } },
+      { text: '段階的に1.5％まで増額し様子を見る', effect: { approvalRating: 5, diplomacy: 8, nationalDebt: 120, stockPrice: 100 } },
+      { text: '効率化で現状予算内での防衛力強化', effect: { approvalRating: 8, diplomacy: 3, nationalDebt: -20, technology: 5 } },
+    ],
+  },
+
+  // 内政・司法・治安
+  {
+    id: 'juvenile_law_1',
+    category: 'social',
+    title: '少年法適用年齢引き下げ論争',
+    description: '凶悪犯罪の低年齢化を受け、少年法の適用年齢を現在の18歳未満からさらに引き下げる議論が活発化。更生重視か厳罰主義か、教育現場からも様々な意見が寄せられています。',
+    options: [
+      { text: '16歳未満に引き下げ、厳罰主義を強化', effect: { approvalRating: 12, gdp: -2, nationalDebt: 30, technology: -3 } },
+      { text: '現状維持で更生プログラムを充実', effect: { approvalRating: -5, gdp: 2, nationalDebt: 50, environment: 3 } },
+      { text: '個別事案での柔軟な判断制度を導入', effect: { approvalRating: 8, gdp: 1, nationalDebt: 25, technology: 2 } },
+    ],
+  },
+  {
+    id: 'death_penalty_1',
+    category: 'social',
+    title: '死刑制度存廃論争が再燃',
+    description: '国際的な死刑廃止の流れと、国内世論の死刑支持が対立。法務大臣の執行署名問題も含め、人権と応報のバランスが問われています。被害者遺族の声も複雑です。',
+    options: [
+      { text: '死刑制度を段階的に廃止し終身刑導入', effect: { approvalRating: -12, diplomacy: 8, gdp: -1, stockPrice: -100 } },
+      { text: '現行制度を維持し適正な執行を継続', effect: { approvalRating: 8, diplomacy: -3, gdp: 1, stockPrice: 50 } },
+      { text: '国民投票で死刑制度の是非を問う', effect: { approvalRating: 5, diplomacy: 2, nationalDebt: 20, technology: 1 } },
+    ],
+  },
+
+  // 財政・経済
+  {
+    id: 'consumption_tax_1',
+    category: 'economy',
+    title: '消費税率15％への引き上げ検討',
+    description: '社会保障費の急増と財政健全化のため、消費税率を15％に引き上げる案が財務省から提示。経済界は景気への悪影響を懸念、高齢者団体は社会保障充実を支持しています。',
+    options: [
+      { text: '段階的に15％まで引き上げ、社会保障充実', effect: { approvalRating: -20, gdp: -15, nationalDebt: -100, stockPrice: -600, usdJpyRate: 3 } },
+      { text: '10％を維持し、他の財源確保策を検討', effect: { approvalRating: 8, gdp: 3, nationalDebt: 50, stockPrice: 200 } },
+      { text: '軽減税率拡大で実質的な負担軽減', effect: { approvalRating: 12, gdp: 5, nationalDebt: 80, stockPrice: 300 } },
+    ],
+  },
+  {
+    id: 'basic_income_1',
+    category: 'economy',
+    title: 'ベーシックインカム導入の可能性',
+    description: 'AI時代の雇用不安とコロナ禍の経済格差拡大を受け、全国民に月7万円を支給するベーシックインカム構想が浮上。財源確保と労働意欲への影響が課題です。',
+    options: [
+      { text: '月7万円のベーシックインカムを段階導入', effect: { approvalRating: 15, gdp: -5, nationalDebt: 300, stockPrice: -200, technology: 5 } },
+      { text: '低所得者限定の給付制度を拡充', effect: { approvalRating: 10, gdp: 2, nationalDebt: 120, stockPrice: 100 } },
+      { text: '現行の社会保障制度の効率化で対応', effect: { approvalRating: -3, gdp: 5, nationalDebt: -30, stockPrice: 200 } },
+    ],
+  },
+
+  // 社会保障・福祉
+  {
+    id: 'pension_age_1',
+    category: 'social',
+    title: '年金支給開始年齢70歳への引き上げ',
+    description: '人生100年時代と年金財政の逼迫を受け、支給開始年齢を70歳に引き上げる案が検討されています。高齢者の就労環境整備と若年層の負担軽減が焦点です。',
+    options: [
+      { text: '2030年までに段階的に70歳まで引き上げ', effect: { approvalRating: -18, gdp: 8, nationalDebt: -80, stockPrice: 400, technology: 3 } },
+      { text: '選択制で65歳と70歳を選べる制度に', effect: { approvalRating: 5, gdp: 3, nationalDebt: -20, stockPrice: 150 } },
+      { text: '現行65歳を維持し、他の改革で対応', effect: { approvalRating: 12, gdp: -2, nationalDebt: 60, stockPrice: -100 } },
+    ],
+  },
+  {
+    id: 'childcare_support_1',
+    category: 'social',
+    title: '出産奨励金100万円支給構想',
+    description: '出生率1.3の危機的状況を受け、第1子から100万円、第2子200万円、第3子300万円の出産奨励金支給案が浮上。少子化対策の切り札となるか、財源確保が課題です。',
+    options: [
+      { text: '出産奨励金制度を全国で実施', effect: { approvalRating: 20, gdp: 5, nationalDebt: 150, stockPrice: 300, environment: 2 } },
+      { text: '保育所整備など環境整備を優先', effect: { approvalRating: 15, gdp: 8, nationalDebt: 100, technology: 5 } },
+      { text: '企業の育児支援制度充実を促進', effect: { approvalRating: 8, gdp: 10, nationalDebt: 40, stockPrice: 200 } },
+    ],
+  },
+
+  // 教育・文化・科学技術
+  {
+    id: 'university_free_1',
+    category: 'social',
+    title: '大学授業料完全無償化への道筋',
+    description: '教育格差解消と人材育成強化のため、国公私立大学の授業料を完全無償化する構想が浮上。年間3兆円の財源確保と教育の質向上の両立が課題です。',
+    options: [
+      { text: '10年間で段階的に完全無償化を実現', effect: { approvalRating: 18, gdp: 12, nationalDebt: 200, technology: 15, stockPrice: 400 } },
+      { text: '所得制限付きで無償化範囲を拡大', effect: { approvalRating: 12, gdp: 8, nationalDebt: 120, technology: 10 } },
+      { text: '奨学金制度の充実で実質無償化', effect: { approvalRating: 8, gdp: 5, nationalDebt: 80, technology: 6 } },
+    ],
+  },
+  {
+    id: 'ai_regulation_1',
+    category: 'technology',
+    title: 'AI規制法案の策定急務',
+    description: 'ChatGPTなど生成AIの急速な普及で、雇用への影響や情報の真偽、プライバシー保護が社会問題化。EU並みの厳格な規制か、イノベーション重視の緩やかな規制か。',
+    options: [
+      { text: 'EU並みの厳格なAI規制法を制定', effect: { approvalRating: 8, technology: -5, gdp: -3, stockPrice: -200, diplomacy: 5 } },
+      { text: '業界自主規制を基本とした緩やかな枠組み', effect: { approvalRating: -3, technology: 12, gdp: 8, stockPrice: 500, diplomacy: 3 } },
+      { text: '段階的規制で技術発展と安全性を両立', effect: { approvalRating: 12, technology: 8, gdp: 5, stockPrice: 300 } },
+    ],
+  },
+
+  // 環境・エネルギー
+  {
+    id: 'nuclear_restart_1',
+    category: 'environment',
+    title: '原発再稼働加速か脱原発か',
+    description: 'エネルギー価格高騰と脱炭素目標達成のため、原発再稼働を加速する案と、再生エネルギーへの完全転換を目指す案が対立。福島の教訓と現実的なエネルギー政策の両立が課題です。',
+    options: [
+      { text: '安全基準クリア原発の再稼働を積極推進', effect: { approvalRating: -8, environment: -10, gdp: 15, stockPrice: 600, usdJpyRate: -3 } },
+      { text: '2030年までに原発ゼロを目指す', effect: { approvalRating: 12, environment: 20, gdp: -8, stockPrice: -300, nationalDebt: 150 } },
+      { text: '当面は必要最小限の稼働で段階的脱原発', effect: { approvalRating: 8, environment: 5, gdp: 3, stockPrice: 100, nationalDebt: 60 } },
+    ],
+  },
+  {
+    id: 'carbon_tax_1',
+    category: 'environment',
+    title: '炭素税導入で脱炭素社会実現',
+    description: '2050年カーボンニュートラル達成のため、CO2排出量に応じた炭素税導入が検討されています。産業界は競争力低下を懸念、環境団体は不十分と批判しています。',
+    options: [
+      { text: 'トン当たり1万円の本格的炭素税を導入', effect: { approvalRating: -5, environment: 18, gdp: -10, stockPrice: -400, nationalDebt: -50 } },
+      { text: '段階的に炭素税率を引き上げ', effect: { approvalRating: 5, environment: 12, gdp: -3, stockPrice: -100, nationalDebt: -20 } },
+      { text: '企業の自主的削減努力を支援', effect: { approvalRating: 8, environment: 5, gdp: 2, stockPrice: 200, nationalDebt: 40 } },
+    ],
+  },
+
+  // 農林水産・食料
+  {
+    id: 'food_security_1',
+    category: 'economy',
+    title: '食料自給率50％達成への挑戦',
+    description: 'ウクライナ情勢で食料安保の重要性が再認識される中、現在38％の食料自給率を50％に引き上げる目標が設定されました。農業構造改革と国際競争力強化が急務です。',
+    options: [
+      { text: '大規模農業法人化で生産性向上', effect: { approvalRating: 5, gdp: 8, environment: -3, stockPrice: 200, nationalDebt: 60 } },
+      { text: '小規模農家支援で地域農業を維持', effect: { approvalRating: 12, gdp: 3, environment: 8, nationalDebt: 80 } },
+      { text: '先端技術活用でスマート農業推進', effect: { approvalRating: 8, gdp: 10, technology: 12, stockPrice: 300, nationalDebt: 100 } },
+    ],
+  },
+
+  // インフラ・国土交通
+  {
+    id: 'highway_free_1',
+    category: 'economy',
+    title: '高速道路完全無料化の是非',
+    description: '地方活性化と物流コスト削減のため、高速道路の完全無料化が再び議論されています。年間2.5兆円の料金収入をどう代替するか、維持管理費の確保が課題です。',
+    options: [
+      { text: '10年間で段階的に完全無料化', effect: { approvalRating: 25, gdp: 12, nationalDebt: 180, stockPrice: 400, usdJpyRate: 2 } },
+      { text: '地方路線のみ無料化し都市部は有料維持', effect: { approvalRating: 15, gdp: 8, nationalDebt: 100, stockPrice: 200 } },
+      { text: '現行制度を維持し料金体系を見直し', effect: { approvalRating: -3, gdp: 2, nationalDebt: -20, stockPrice: 50 } },
+    ],
+  },
+
+  // 防災・危機管理
+  {
+    id: 'capital_relocation_1',
+    category: 'social',
+    title: '首都機能移転で災害リスク分散',
+    description: '首都直下地震のリスクを受け、国会や中央省庁の一部を地方に移転する首都機能分散が再検討されています。コストと効果、地方創生との関連が焦点です。',
+    options: [
+      { text: '20年計画で段階的に首都機能を分散', effect: { approvalRating: 8, gdp: 5, nationalDebt: 200, technology: 8, diplomacy: -2 } },
+      { text: '災害時のバックアップ機能のみ地方設置', effect: { approvalRating: 12, gdp: 3, nationalDebt: 80, technology: 5 } },
+      { text: 'デジタル化で物理的移転を最小限に', effect: { approvalRating: 15, gdp: 8, nationalDebt: 60, technology: 15 } },
+    ],
+  },
+
+  // 行政運営・統治
+  {
+    id: 'electoral_reform_1',
+    category: 'social',
+    title: '選挙権年齢16歳への引き下げ',
+    description: '若者の政治参加促進と将来世代の声を政治に反映させるため、選挙権年齢を16歳に引き下げる案が浮上。教育現場での政治教育充実も課題となっています。',
+    options: [
+      { text: '16歳選挙権を導入し若者の政治参加促進', effect: { approvalRating: 8, gdp: 2, technology: 5, diplomacy: 3, stockPrice: 100 } },
+      { text: '18歳を維持し政治教育の充実を図る', effect: { approvalRating: 5, gdp: 1, technology: 3, nationalDebt: 30 } },
+      { text: '段階的に17歳から導入し様子を見る', effect: { approvalRating: 10, gdp: 1, technology: 4, stockPrice: 50 } },
+    ],
+  },
+
+  // 複雑な政治課題（10選択肢形式）
+  {
+    id: 'nuclear_complex_decision',
+    category: 'environment',
+    title: '原発を動かす？動かさない？エネルギー政策の大転換',
+    description: '戦後日本は資源小国として原子力発電を推進し、ピーク時には電力の3割を担いました。しかし2011年福島第一原発事故で「安全神話」は崩壊。脱原発世論、再エネ拡大の遅れ、電気料金上昇、CO2削減の国際公約とエネルギー安全保障が複雑に絡み合う中、総理大臣の歴史的決断が問われています。',
+    options: [
+      { text: '【全面再稼働】安全審査通過原発は全て稼働、安定供給と経済競争力を最優先', effect: { approvalRating: -12, environment: -15, gdp: 18, stockPrice: 800, usdJpyRate: -5, nationalDebt: -50 } },
+      { text: '【限定再稼働】首都圏・産業地帯必要分のみ稼働、地方原発は停止', effect: { approvalRating: 3, environment: -8, gdp: 10, stockPrice: 400, nationalDebt: -20 } },
+      { text: '【再稼働＋新設】小型モジュール炉（SMR）導入で「安全な原発国家」を目指す', effect: { approvalRating: -5, environment: -10, gdp: 15, technology: 20, stockPrice: 600, nationalDebt: 150 } },
+      { text: '【再稼働＋再エネ投資】原発稼働しつつ再エネ巨額投資で移行期間を乗り切る', effect: { approvalRating: 8, environment: 5, gdp: 8, technology: 15, stockPrice: 300, nationalDebt: 200 } },
+      { text: '【長期脱原発ロードマップ】30年以内原発ゼロ宣言、段階的縮小計画', effect: { approvalRating: 15, environment: 18, gdp: -8, stockPrice: -200, nationalDebt: 100 } },
+      { text: '【即時脱原発】全原発即停止・再稼働禁止、火力と再エネで代替', effect: { approvalRating: 8, environment: 25, gdp: -20, stockPrice: -800, usdJpyRate: 8, nationalDebt: 250 } },
+      { text: '【原発輸出路線】国内利用抑制も技術輸出産業として育成、国際影響力確保', effect: { approvalRating: -3, environment: -5, gdp: 12, diplomacy: 8, stockPrice: 400, technology: 10 } },
+      { text: '【自治体判断尊重】原発立地自治体住民投票で稼働可否決定、中央は調整役', effect: { approvalRating: 12, environment: 3, gdp: -3, diplomacy: 5, stockPrice: -100 } },
+      { text: '【国営化プラン】原発事業国営化で利益優先から安全第一制度に改革', effect: { approvalRating: 5, environment: 8, gdp: -5, nationalDebt: 180, stockPrice: -300, technology: 5 } },
+      { text: '【電力需給改革】原発依存縮小＋電力自由化・省エネ強化・送電網再編', effect: { approvalRating: 10, environment: 12, gdp: 5, technology: 12, stockPrice: 200, nationalDebt: 120 } },
+    ],
+  },
+
+  {
+    id: 'constitutional_revision_complex',
+    category: 'diplomacy',
+    title: '憲法改正か現状維持か？戦後体制の大転換点',
+    description: '戦後77年間維持されてきた平和憲法。国際情勢の激変、中国・北朝鮮の軍事的脅威、日米同盟の深化要求を背景に、憲法9条改正論議が本格化。自衛隊明記、集団的自衛権、緊急事態条項など論点は多岐にわたり、国民世論も分裂。歴史的な憲法改正に踏み切るか、解釈改憲で対応するか。',
+    options: [
+      { text: '【9条全面改正】自衛隊を国防軍に格上げ、集団的自衛権を全面行使可能に', effect: { approvalRating: -15, diplomacy: 15, nationalDebt: 200, stockPrice: -500, usdJpyRate: -3 } },
+      { text: '【9条に自衛隊明記】現行9条に自衛隊条項追加、専守防衛は維持', effect: { approvalRating: -8, diplomacy: 8, nationalDebt: 80, stockPrice: -200 } },
+      { text: '【緊急事態条項新設】災害・有事の政府権限強化、基本的人権の一時制限可能', effect: { approvalRating: -5, diplomacy: 5, nationalDebt: 60, technology: 3, stockPrice: -100 } },
+      { text: '【段階的改正】まず緊急事態条項から着手、9条は将来課題に', effect: { approvalRating: 3, diplomacy: 3, nationalDebt: 40, stockPrice: 50 } },
+      { text: '【解釈改憲継続】憲法改正せず、政府解釈変更で安保政策を柔軟運用', effect: { approvalRating: 8, diplomacy: -3, gdp: 3, stockPrice: 100 } },
+      { text: '【現状維持宣言】憲法改正議論を封印、平和外交路線を堅持', effect: { approvalRating: 12, diplomacy: -8, gdp: 5, environment: 5, stockPrice: 200 } },
+      { text: '【国民投票実施】改正の是非を国民投票で直接問う、政府は中立維持', effect: { approvalRating: 15, diplomacy: 0, nationalDebt: 30, stockPrice: -50 } },
+      { text: '【地方分権強化】中央集権見直し、地方自治体の権限大幅拡大を優先', effect: { approvalRating: 10, gdp: 8, nationalDebt: 50, technology: 5, stockPrice: 150 } },
+      { text: '【人権条項拡充】LGBT・外国人の権利保障、多様性重視の憲法改正', effect: { approvalRating: 5, diplomacy: 8, gdp: 3, environment: 8, stockPrice: 100 } },
+      { text: '【統治機構改革】首相公選制・参院廃止など政治制度抜本改革を優先', effect: { approvalRating: 8, gdp: 5, nationalDebt: 40, technology: 8, stockPrice: 200 } },
+    ],
+  },
+
+  {
+    id: 'nuclear_power_decision',
+    category: 'environment',
+    title: '🏭 原発をどうする？',
+    description: '日本は資源小国として原発を推進してきましたが、2011年の福島第一原発事故で大きく方針が揺らぎました。再稼働か脱原発か、CO2削減と安全性の両立が課題です。\n\n利害関係者：\n・政府：電力安定と温暖化対策を両立したい\n・電力会社：再稼働で経営改善を図りたい\n・住民：事故リスクに強く反対\n・国際社会：パリ協定履行を要求',
+    options: [
+      { text: '全原発を即座に再稼働、エネルギー安定供給を最優先', effect: { approvalRating: -15, environment: -12, gdp: 18, stockPrice: 800, nationalDebt: -50 } },
+      { text: '安全審査通過分のみ段階的再稼働', effect: { approvalRating: -5, environment: -5, gdp: 10, stockPrice: 400, nationalDebt: -20 } },
+      { text: '再稼働しつつ再エネ投資で将来的脱原発', effect: { approvalRating: 8, environment: 5, gdp: 5, technology: 12, nationalDebt: 100 } },
+      { text: '全原発停止、火力発電で当面しのぐ', effect: { approvalRating: 12, environment: -8, gdp: -12, stockPrice: -400, usdJpyRate: 5 } },
+      { text: '脱原発＋再エネ大規模投資で完全転換', effect: { approvalRating: 18, environment: 20, gdp: -5, stockPrice: -200, nationalDebt: 200 } },
+      { text: '次世代小型原子炉（SMR）の開発推進', effect: { approvalRating: 3, environment: -3, gdp: 8, technology: 18, nationalDebt: 150 } },
+      { text: '原発の国有化で安全性を最優先運営', effect: { approvalRating: 8, environment: 8, gdp: -3, nationalDebt: 120, stockPrice: -300 } },
+      { text: '地元住民投票で原発稼働の可否を決定', effect: { approvalRating: 15, environment: 3, gdp: -2, diplomacy: 5, stockPrice: -100 } },
+      { text: '原発技術を輸出産業として海外展開', effect: { approvalRating: -3, gdp: 12, diplomacy: 8, technology: 10, stockPrice: 300 } },
+      { text: '電力自由化拡大で市場に判断を委ねる', effect: { approvalRating: 5, gdp: 8, stockPrice: 200, technology: 5, environment: 2 } },
+    ],
+  },
+
+  {
+    id: 'birth_rate_crisis',
+    category: 'social',
+    title: '👶 少子化対策はどうする？',
+    description: '出生率は1.2台まで低下し、人口減少が加速しています。教育費負担、働き方の問題、価値観の多様化などが背景にあります。このままでは社会保障制度の維持も困難です。\n\n利害関係者：\n・若者世代：子育て費用や労働環境に不満\n・高齢者世代：年金や医療制度維持を重視\n・企業：人材不足の解決を期待\n・国際社会：日本の移民政策に注目',
+    options: [
+      { text: '出産一時金を500万円に大幅増額', effect: { approvalRating: 25, gdp: 5, nationalDebt: 300, stockPrice: 200, environment: 2 } },
+      { text: '保育所を10年で10万か所新設', effect: { approvalRating: 20, gdp: 8, nationalDebt: 200, technology: 5, stockPrice: 300 } },
+      { text: '育児休業を3年間、給与満額保障', effect: { approvalRating: 18, gdp: -3, nationalDebt: 150, stockPrice: -100, technology: 3 } },
+      { text: '大学まで教育費完全無償化', effect: { approvalRating: 22, gdp: 10, nationalDebt: 250, technology: 15, stockPrice: 400 } },
+      { text: '週休3日制を法制化し働き方改革', effect: { approvalRating: 30, gdp: -5, stockPrice: -200, technology: 8, environment: 8 } },
+      { text: '外国人労働者を年間100万人受入', effect: { approvalRating: -10, gdp: 15, diplomacy: 12, stockPrice: 500, environment: -3 } },
+      { text: '独身税を導入し結婚を促進', effect: { approvalRating: -20, gdp: 3, nationalDebt: -50, stockPrice: -300, diplomacy: -5 } },
+      { text: 'AI・ロボットで労働力不足を解決', effect: { approvalRating: 12, gdp: 12, technology: 25, stockPrice: 800, nationalDebt: 180 } },
+      { text: '地方移住者に1000万円支給', effect: { approvalRating: 15, gdp: 5, nationalDebt: 120, environment: 12, stockPrice: 100 } },
+      { text: '現状維持で自然な人口調整に任せる', effect: { approvalRating: -8, gdp: -8, nationalDebt: -30, stockPrice: -200, diplomacy: -3 } },
+    ],
+  },
+
+  {
+    id: 'defense_budget_decision',
+    category: 'diplomacy',
+    title: '🛡️ 防衛費をどうする？',
+    description: '冷戦後、日本は防衛費をGDP比1％程度に抑制してきました。しかし中国の軍拡、北朝鮮の核実験、ロシアの侵攻により安全保障環境が悪化。NATO諸国はGDP比2％を基準にしています。\n\n利害関係者：\n・防衛省：装備更新と人員確保を希望\n・財務省：財政赤字拡大に強く懸念\n・国民：安全保障と生活保障の板挟み\n・米国：日本に防衛負担増を強く要請',
+    options: [
+      { text: 'NATO基準GDP比2％まで倍増', effect: { approvalRating: -8, diplomacy: 15, nationalDebt: 200, stockPrice: 300, technology: 8 } },
+      { text: '段階的に1.5％まで増額', effect: { approvalRating: 3, diplomacy: 8, nationalDebt: 120, stockPrice: 150, technology: 5 } },
+      { text: '現状1％維持で効率化重視', effect: { approvalRating: 8, diplomacy: -3, nationalDebt: -20, stockPrice: 50, technology: 3 } },
+      { text: '0.5％に削減し平和外交重視', effect: { approvalRating: 12, diplomacy: -8, nationalDebt: -100, stockPrice: -200, environment: 8 } },
+      { text: '防衛装備の国産化を推進', effect: { approvalRating: 5, diplomacy: 3, gdp: 10, technology: 15, stockPrice: 400 } },
+      { text: '日米共同開発で費用分担', effect: { approvalRating: 8, diplomacy: 12, nationalDebt: 80, technology: 12, stockPrice: 200 } },
+      { text: 'サイバー防衛に特化投資', effect: { approvalRating: 15, diplomacy: 5, technology: 20, nationalDebt: 60, stockPrice: 300 } },
+      { text: '自衛隊を災害救助専門組織に', effect: { approvalRating: 20, diplomacy: -12, gdp: 3, environment: 10, stockPrice: -100 } },
+      { text: '防衛費の使途を国民投票で決定', effect: { approvalRating: 18, diplomacy: -5, nationalDebt: 20, stockPrice: -50, technology: 2 } },
+      { text: '地域防衛を自治体に移管', effect: { approvalRating: 10, diplomacy: -8, gdp: 5, nationalDebt: -50, environment: 5 } },
+    ],
+  },
+
+  {
+    id: 'consumption_tax_dilemma',
+    category: 'economy',
+    title: '💰 消費税をどうする？',
+    description: '社会保障費の急増で財政が逼迫しています。現在10％の消費税について、財務省は15％への引き上げを検討、経済界は景気への悪影響を懸念しています。\n\n利害関係者：\n・財務省：財政健全化のため増税必要\n・経済界：消費低迷で景気悪化を懸念\n・高齢者：社会保障充実のため増税支持\n・現役世代：生活負担増に強く反対',
+    options: [
+      { text: '15％に段階的引き上げ、社会保障充実', effect: { approvalRating: -18, gdp: -10, nationalDebt: -150, stockPrice: -500, usdJpyRate: 3 } },
+      { text: '12％に小幅引き上げ、激変緩和', effect: { approvalRating: -12, gdp: -5, nationalDebt: -80, stockPrice: -200, usdJpyRate: 2 } },
+      { text: '10％維持、他の財源を模索', effect: { approvalRating: 8, gdp: 3, nationalDebt: 50, stockPrice: 200, technology: 2 } },
+      { text: '8％に引き下げ、景気刺激優先', effect: { approvalRating: 25, gdp: 12, nationalDebt: 100, stockPrice: 600, usdJpyRate: -2 } },
+      { text: '軽減税率を食料品全般に拡大', effect: { approvalRating: 15, gdp: 5, nationalDebt: 80, stockPrice: 300, environment: 2 } },
+      { text: '富裕層への所得税増税で代替', effect: { approvalRating: 20, gdp: -3, nationalDebt: -60, stockPrice: -300, diplomacy: -2 } },
+      { text: '法人税増税で企業負担増', effect: { approvalRating: 12, gdp: -8, nationalDebt: -100, stockPrice: -400, technology: -5 } },
+      { text: '炭素税導入で環境と財政両立', effect: { approvalRating: 5, gdp: -5, nationalDebt: -40, environment: 15, stockPrice: -200 } },
+      { text: '国債発行継続、将来世代に負担', effect: { approvalRating: 10, gdp: 8, nationalDebt: 200, stockPrice: 400, diplomacy: -3 } },
+      { text: '消費税廃止、他税制で全面見直し', effect: { approvalRating: 35, gdp: 20, nationalDebt: 300, stockPrice: 800, technology: 5 } },
+    ],
+  },
+
+  {
+    id: 'working_style_reform',
+    category: 'social',
+    title: '⏰ 働き方をどう変える？',
+    description: '長時間労働や過労死が社会問題となる中、働き方改革が求められています。一方で企業の競争力維持や経済成長との両立も課題です。\n\n利害関係者：\n・労働者：労働時間短縮と賃金向上を要求\n・企業：生産性維持と人件費抑制が課題\n・政府：経済成長と労働環境改善の両立\n・国際社会：日本の労働慣行に注目',
+    options: [
+      { text: '週休3日制を法制化、労働時間大幅短縮', effect: { approvalRating: 30, gdp: -8, stockPrice: -300, technology: 8, environment: 10 } },
+      { text: '残業時間を月20時間に厳格制限', effect: { approvalRating: 25, gdp: -5, stockPrice: -200, technology: 5, environment: 5 } },
+      { text: '同一労働同一賃金を完全実施', effect: { approvalRating: 20, gdp: 3, stockPrice: -100, technology: 3, diplomacy: 5 } },
+      { text: 'テレワークを法的権利として保障', effect: { approvalRating: 22, gdp: 5, technology: 12, environment: 8, stockPrice: 200 } },
+      { text: '最低賃金を1500円に大幅引き上げ', effect: { approvalRating: 28, gdp: -3, stockPrice: -250, nationalDebt: 50, diplomacy: 3 } },
+      { text: '副業・兼業を全面解禁推進', effect: { approvalRating: 18, gdp: 8, technology: 10, stockPrice: 300, environment: 2 } },
+      { text: 'AI・ロボット導入で労働負担軽減', effect: { approvalRating: 15, gdp: 12, technology: 25, stockPrice: 800, nationalDebt: 100 } },
+      { text: '成果主義賃金制度を法制化', effect: { approvalRating: -5, gdp: 10, stockPrice: 400, technology: 8, diplomacy: 2 } },
+      { text: '現行制度維持、企業の自主性重視', effect: { approvalRating: -8, gdp: 5, stockPrice: 100, technology: 2, environment: -2 } },
+      { text: '労働時間規制を大幅緩和', effect: { approvalRating: -20, gdp: 15, stockPrice: 500, technology: -3, environment: -5 } },
     ],
   },
 ];
@@ -415,9 +689,11 @@ function App() {
     return Math.random() < 0.2;
   };
 
-  // AI駆動イベント生成
+  // AI駆動イベント生成（重複防止強化版）
   const generateAIEvent = async (): Promise<GameEvent> => {
     console.log('🎲 AI駆動イベント生成開始');
+    console.log('📊 現在の使用済みイベント:', gameState.usedEventIds);
+    console.log(`📈 進捗: ${gameState.usedEventIds.length}/${eventTemplates.length} イベント使用済み`);
     setIsGeneratingEvent(true);
     
     try {
@@ -453,7 +729,7 @@ function App() {
         politicalTrends: gameState.politicalTrends,
         previousEvents: gameState.gameLog.map(log => log.event),
         previousChoices: gameState.gameLog.map(log => log.choice),
-        usedEventIds: gameState.usedEventIds,
+        usedEventIds: [...gameState.usedEventIds], // 配列のコピーを渡す
         gamePhase: gamePhase as 'early' | 'middle' | 'late',
         currentSeason: currentSeason as 'spring' | 'summer' | 'autumn' | 'winter',
         globalContext
@@ -506,21 +782,29 @@ function App() {
     }
   };
 
-  // 従来のランダムイベント取得（フォールバック用）
+  // 重複防止強化版ランダムイベント取得
   const getRandomEvent = (): GameEvent => {
-    console.log('🔄 フォールバックイベント生成');
+    console.log('🔄 重複防止イベント生成開始');
+    console.log('使用済みイベントID:', gameState.usedEventIds);
     
-    // 通常イベント
+    // 未使用イベントをフィルタリング
     const availableEvents = eventTemplates.filter(template => 
       !gameState.usedEventIds.includes(template.id)
     );
     
+    console.log(`利用可能イベント数: ${availableEvents.length}/${eventTemplates.length}`);
+    
+    // 利用可能なイベントがない場合の処理
     if (availableEvents.length === 0) {
+      console.log('⚠️ 全イベント使用済み、フォールバックイベント生成');
       return generateFallbackEvent();
     }
     
+    // ランダムに選択（シャッフルして最初を選択）
     const shuffled = shuffleArray(availableEvents);
     const selected = shuffled[0];
+    
+    console.log('✅ 選択されたイベント:', selected.id, selected.title);
     
     return {
       id: selected.id,
@@ -530,32 +814,50 @@ function App() {
     };
   };
 
-  // フォールバックイベント生成
+  // フォールバックイベント生成（重複防止対応）
   const generateFallbackEvent = (): GameEvent => {
+    console.log('🔄 フォールバックイベント生成（全イベント使用済み）');
+    
+    // タイムスタンプを使用してユニークなIDを生成
+    const timestamp = Date.now();
+    const randomId = Math.floor(Math.random() * 1000);
+    
     const fallbackEvents = [
       {
-        id: 'fallback_1',
-        title: '新たな政治課題の浮上',
-        description: '予期せぬ政治課題が浮上しました。迅速な対応が求められています。',
+        id: `fallback_political_${timestamp}_${randomId}`,
+        title: '🏛️ 新たな政治課題の浮上',
+        description: '予期せぬ政治課題が浮上しました。これまでの政策経験を活かした迅速な対応が求められています。',
         options: [
-          { text: '専門委員会を設置して検討', effect: { approvalRating: 3, nationalDebt: 20 } },
-          { text: '既存政策の枠組みで対応', effect: { approvalRating: 1, gdp: 2 } },
-          { text: '国際的な事例を参考に対策', effect: { approvalRating: 2, diplomacy: 3 } },
+          { text: '専門委員会を設置して徹底検討', effect: { approvalRating: 5, nationalDebt: 30, technology: 3 } },
+          { text: '既存政策の枠組みを活用して対応', effect: { approvalRating: 3, gdp: 3, diplomacy: 2 } },
+          { text: '国際的な事例を参考に新政策立案', effect: { approvalRating: 4, diplomacy: 5, technology: 2 } },
         ]
       },
       {
-        id: 'fallback_2',
-        title: '地方自治体からの要望',
-        description: '複数の地方自治体から政府への要望が寄せられています。地方の声にどう応えるかが問われています。',
+        id: `fallback_regional_${timestamp}_${randomId}`,
+        title: '🌾 地方創生の新たな挑戦',
+        description: '地方自治体から革新的な政策提案が寄せられています。地方の創意工夫をどう国政に活かすかが問われています。',
         options: [
-          { text: '地方交付税を増額', effect: { approvalRating: 8, nationalDebt: 60 } },
-          { text: '地方分権を推進', effect: { approvalRating: 5, gdp: 3 } },
-          { text: '個別協議で対応', effect: { approvalRating: 3, diplomacy: 2 } },
+          { text: '地方交付税を大幅増額し支援強化', effect: { approvalRating: 10, nationalDebt: 80, environment: 3 } },
+          { text: '地方分権を推進し権限移譲', effect: { approvalRating: 8, gdp: 5, technology: 3 } },
+          { text: '官民連携で地方創生プロジェクト', effect: { approvalRating: 6, gdp: 8, stockPrice: 200 } },
+        ]
+      },
+      {
+        id: `fallback_future_${timestamp}_${randomId}`,
+        title: '🚀 未来への政策転換',
+        description: 'これまでの政策経験を踏まえ、新たな時代に向けた政策転換が求められています。総理の決断が日本の未来を左右します。',
+        options: [
+          { text: '次世代技術への大胆な投資', effect: { approvalRating: 8, technology: 15, nationalDebt: 100, stockPrice: 400 } },
+          { text: '持続可能な社会システム構築', effect: { approvalRating: 12, environment: 12, nationalDebt: 80, gdp: 5 } },
+          { text: '国際協調による課題解決', effect: { approvalRating: 6, diplomacy: 12, gdp: 3, technology: 5 } },
         ]
       }
     ];
     
     const selected = fallbackEvents[Math.floor(Math.random() * fallbackEvents.length)];
+    console.log('✅ フォールバックイベント選択:', selected.id, selected.title);
+    
     return {
       id: selected.id,
       title: selected.title,
@@ -567,7 +869,7 @@ function App() {
   // AI Provider Managerインスタンス
   const [aiProvider] = useState(() => new AIProviderManager());
   const [policyAnalyzer] = useState(() => new PolicyAnalyzer(aiProvider));
-  const [eventGenerator] = useState(() => new EventGenerator(aiProvider));
+  const [eventGenerator] = useState(() => new EventGenerator(aiProvider, true, false)); // 静的設問有効、AI拡張機能無効（一時的）
   const [rankingSystem] = useState(() => new RankingSystem());
   const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
@@ -789,6 +1091,10 @@ function App() {
   // AI駆動政策選択ハンドラ
   const handlePolicyChoice = async (option: PolicyOption) => {
     if (isProcessing || !gameState.currentEvent) return;
+
+    // ページトップにスクロール
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     setIsProcessing(true);
     setIsAnalyzingPolicy(true);
     
@@ -871,12 +1177,15 @@ function App() {
           },
         ];
         
-        // 使用済みイベントIDを更新
-        if (!next.usedEventIds.includes(currentEventId)) {
+        // 使用済みイベントIDを確実に更新（重複防止強化）
+        if (currentEventId && !next.usedEventIds.includes(currentEventId)) {
           next.usedEventIds = [...next.usedEventIds, currentEventId];
-          console.log('イベントID追加:', currentEventId, '使用済み:', next.usedEventIds);
-        } else {
-          console.warn('重複イベント検出:', currentEventId);
+          console.log('✅ イベントID追加:', currentEventId);
+          console.log('📝 現在の使用済みID:', next.usedEventIds);
+          console.log(`📊 進捗: ${next.usedEventIds.length}/${eventTemplates.length} イベント使用済み`);
+        } else if (currentEventId) {
+          console.warn('⚠️ 重複イベント検出:', currentEventId);
+          console.log('🔍 既存の使用済みID:', next.usedEventIds);
         }
         
         // 政治トレンド分析を更新
@@ -915,20 +1224,8 @@ function App() {
         setGameState(prevState => ({ ...prevState, isAIThinking: false }));
       });
       
-      // 次ターンがある場合は新しいイベントを生成
-      if (gameState.turn + 1 <= gameState.maxTurns) {
-        generateAIEvent().then(nextEvent => {
-          setGameState(prev => ({ ...prev, currentEvent: nextEvent }));
-          setIsProcessing(false);
-        }).catch(error => {
-          console.error('❌ 次イベント生成エラー:', error);
-          const fallbackEvent = getRandomEvent();
-          setGameState(prev => ({ ...prev, currentEvent: fallbackEvent }));
-          setIsProcessing(false);
-        });
-      } else {
-        setIsProcessing(false);
-      }
+      // 政策効果表示モードに移行（次のイベントは手動で進むまで生成しない）
+      setIsProcessing(false);
     }, 500);
 
     } catch (error) {
@@ -978,12 +1275,15 @@ function App() {
             { turn: next.turn, event: currentEventId, choice: option.text, effect: eff },
           ];
           
-          // 使用済みイベントIDを更新
-          if (!next.usedEventIds.includes(currentEventId)) {
+          // 使用済みイベントIDを確実に更新（フォールバック時も重複防止）
+          if (currentEventId && !next.usedEventIds.includes(currentEventId)) {
             next.usedEventIds = [...next.usedEventIds, currentEventId];
-            console.log('イベントID追加:', currentEventId, '使用済み:', next.usedEventIds);
-          } else {
-            console.warn('重複イベント検出:', currentEventId);
+            console.log('✅ フォールバック時イベントID追加:', currentEventId);
+            console.log('📝 現在の使用済みID:', next.usedEventIds);
+            console.log(`📊 進捗: ${next.usedEventIds.length}/${eventTemplates.length} イベント使用済み`);
+          } else if (currentEventId) {
+            console.warn('⚠️ フォールバック時重複イベント検出:', currentEventId);
+            console.log('🔍 既存の使用済みID:', next.usedEventIds);
           }
           
           // 政治トレンド分析を更新
@@ -1020,12 +1320,7 @@ function App() {
           return next;
         });
         
-        // 次ターンがある場合は新しいイベントを生成（エラー時はフォールバック）
-        if (gameState.turn + 1 <= gameState.maxTurns) {
-          const nextEvent = getRandomEvent();
-          setGameState(prev => ({ ...prev, currentEvent: nextEvent }));
-        }
-        
+        // 政策効果表示モードに移行（次のイベントは手動で進むまで生成しない）
         setIsProcessing(false);
       }, 800);
     }
@@ -1218,6 +1513,33 @@ function App() {
   // 効果詳細を閉じる
   const closeEffectDetails = () => {
     setGameState(prev => ({ ...prev, showEffectDetails: false, lastEffect: null }));
+  };
+
+  // 次の政策に進む
+  const proceedToNextPolicy = async () => {
+    // ページトップにスクロール
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 効果詳細を閉じる
+    setGameState(prev => ({ ...prev, showEffectDetails: false, lastEffect: null }));
+
+    // ゲーム終了チェック
+    if (gameState.turn > gameState.maxTurns) {
+      return; // 既にゲーム終了している場合は何もしない
+    }
+
+    // 次のイベントを生成
+    setIsGeneratingEvent(true);
+    try {
+      const nextEvent = await generateAIEvent();
+      setGameState(prev => ({ ...prev, currentEvent: nextEvent }));
+    } catch (error) {
+      console.error('❌ 次イベント生成エラー:', error);
+      const fallbackEvent = getRandomEvent();
+      setGameState(prev => ({ ...prev, currentEvent: fallbackEvent }));
+    } finally {
+      setIsGeneratingEvent(false);
+    }
   };
 
   // 総合ランク評価システム
@@ -1983,13 +2305,7 @@ function App() {
                   <p className="mb-4 text-gray-300 text-sm leading-relaxed"
                      dangerouslySetInnerHTML={{ __html: gameState.currentEvent.description.replace(/\n/g, '<br/>') }} />
                 </>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-4">⏳</div>
-                  <h3 className="text-xl font-semibold mb-2">次の政治課題を準備中...</h3>
-                  <p className="text-gray-400 text-sm">しばらくお待ちください</p>
-                </div>
-              )}
+              ) : null}
               
               {!isGeneratingEvent && gameState.currentEvent && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -2094,12 +2410,14 @@ function App() {
               <div className="bg-cyan-900 rounded-lg p-4 border-2 border-cyan-500">
                 <div className="flex justify-between items-start mb-3">
                   <h4 className="text-lg font-semibold text-cyan-300">📊 政策効果</h4>
-                  <button
-                    onClick={closeEffectDetails}
-                    className="text-cyan-300 hover:text-white text-lg"
-                  >
-                    ×
-                  </button>
+                  {(gameState.isGameOver || gameState.turn > gameState.maxTurns) && (
+                    <button
+                      onClick={() => setGameState(prev => ({ ...prev, isGameOver: true }))}
+                      className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-white text-sm font-medium"
+                    >
+                      🏆 結果発表
+                    </button>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-4 gap-2 text-xs">
@@ -2197,6 +2515,24 @@ function App() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* 政策効果確認後の次進行メッセージ */}
+            {gameState.showEffectDetails && !isGeneratingEvent && !gameState.currentEvent && !gameState.isGameOver && gameState.turn <= gameState.maxTurns && (
+              <div className="bg-green-900 rounded-lg p-4 border-2 border-green-500 mt-4">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">✅</div>
+                  <h3 className="text-xl font-semibold mb-3 text-green-300">次の政治課題の準備ができました</h3>
+                  <p className="text-gray-400 text-sm mb-4">政策効果を確認後、下のボタンで次のターンに進んでください</p>
+                  <button
+                    onClick={proceedToNextPolicy}
+                    disabled={isGeneratingEvent}
+                    className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg text-white font-medium"
+                  >
+                    {isGeneratingEvent ? '生成中...' : '次の政策に進む →'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
