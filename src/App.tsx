@@ -2,9 +2,11 @@ import { useState } from 'react';
 import React from 'react';
 import { AIProviderManager, AIProvider } from './ai-provider';
 import { PolicyAnalyzer, PolicyContext } from './policy-analyzer';
+import { EnhancedPolicyAnalyzer, EnhancedPolicyAnalysis, EnhancedPolicyContext } from './enhanced-policy-analyzer';
 import { EventGenerator, EventGenerationContext, GeneratedEvent } from './event-generator';
 import { RankingSystem, RankingEntry } from './ranking-system';
 import { SecurityValidator } from './security-config';
+import EnhancedEvaluationDisplay from './components/EnhancedEvaluationDisplay';
 // ランキング関連のコンポーネントは削除済み
 
 // ポリシー効果の型
@@ -78,6 +80,9 @@ interface GameState {
   typingTimer: number | null;
   lastEffect: PolicyEffect | null;
   showEffectDetails: boolean;
+  showEnhancedEvaluation: boolean;
+  lastEnhancedAnalysis: EnhancedPolicyAnalysis | null;
+  enhancedState: EnhancedPolicyContext['currentEnhancedState'];
   historyData: Array<{
     turn: number;
     approvalRating: number;
@@ -622,6 +627,9 @@ function App() {
     typingTimer: null,
     lastEffect: null,
     showEffectDetails: false,
+    showEnhancedEvaluation: false,
+    lastEnhancedAnalysis: null,
+    enhancedState: EnhancedPolicyAnalyzer.generateInitialEnhancedState(),
     historyData: [],
     usedEventIds: [],
     eventPool: eventTemplates.map(t => t.id),
@@ -869,6 +877,7 @@ function App() {
   // AI Provider Managerインスタンス
   const [aiProvider] = useState(() => new AIProviderManager());
   const [policyAnalyzer] = useState(() => new PolicyAnalyzer(aiProvider));
+  const [enhancedPolicyAnalyzer] = useState(() => new EnhancedPolicyAnalyzer(aiProvider));
   const [eventGenerator] = useState(() => new EventGenerator(aiProvider, true, false)); // 静的設問有効、AI拡張機能無効（一時的）
   const [rankingSystem] = useState(() => new RankingSystem());
   const [currentProvider, setCurrentProvider] = useState<AIProvider>('fallback');
@@ -1099,8 +1108,8 @@ function App() {
     setIsAnalyzingPolicy(true);
     
     try {
-      // AI政策効果分析を実行
-      const policyContext: PolicyContext = {
+      // 拡張AI政策効果分析を実行
+      const enhancedPolicyContext: EnhancedPolicyContext = {
         eventTitle: gameState.currentEvent.title,
         eventDescription: gameState.currentEvent.description,
         policyChoice: option.text,
@@ -1115,13 +1124,17 @@ function App() {
           usdJpyRate: gameState.usdJpyRate,
           diplomacy: gameState.diplomacy,
         },
+        currentEnhancedState: gameState.enhancedState,
         politicalTrends: gameState.politicalTrends,
         previousPolicies: gameState.gameLog.map(log => log.choice)
       };
 
-      console.log('🔍 AI政策効果分析開始...');
-      const analysisResult = await policyAnalyzer.analyzePolicyEffects(policyContext);
-      console.log('✅ AI政策効果分析完了:', analysisResult);
+      console.log('🔍 拡張AI政策効果分析開始...');
+      const enhancedAnalysisResult = await enhancedPolicyAnalyzer.analyzeEnhancedPolicyEffects(enhancedPolicyContext);
+      console.log('✅ 拡張AI政策効果分析完了:', enhancedAnalysisResult);
+
+      // 基本分析結果も取得（後方互換性のため）
+      const analysisResult = enhancedAnalysisResult;
       
       setIsAnalyzingPolicy(false);
 
@@ -1157,6 +1170,10 @@ function App() {
         next.usdJpyRate = Math.max(100, Math.min(200, next.usdJpyRate + eff.usdJpyRate));
         next.diplomacy = Math.max(0, Math.min(100, next.diplomacy + eff.diplomacy));
         
+        // 拡張状態を更新
+        next.enhancedState = enhancedAnalysisResult.enhancedEffects;
+        next.lastEnhancedAnalysis = enhancedAnalysisResult;
+
         // 効果の詳細を保存（AI分析結果を含む）
         next.lastEffect = {
           ...eff,
@@ -1349,8 +1366,8 @@ function App() {
     setIsAnalyzingPolicy(true);
     
     try {
-      // AI政策効果分析を実行
-      const policyContext: PolicyContext = {
+      // 拡張AI政策効果分析を実行
+      const enhancedPolicyContext: EnhancedPolicyContext = {
         eventTitle: gameState.currentEvent?.title || '独自政策提案',
         eventDescription: gameState.currentEvent?.description || '総理大臣による独自政策の提案',
         policyChoice: sanitizedPolicy,
@@ -1365,13 +1382,17 @@ function App() {
           usdJpyRate: gameState.usdJpyRate,
           diplomacy: gameState.diplomacy,
         },
+        currentEnhancedState: gameState.enhancedState,
         politicalTrends: gameState.politicalTrends,
         previousPolicies: gameState.gameLog.map(log => log.choice)
       };
 
-      console.log('🔍 独自政策AI分析開始:', sanitizedPolicy);
-      const analysisResult = await policyAnalyzer.analyzePolicyEffects(policyContext);
-      console.log('✅ 独自政策AI分析完了:', analysisResult);
+      console.log('🔍 独自政策拡張AI分析開始:', sanitizedPolicy);
+      const enhancedAnalysisResult = await enhancedPolicyAnalyzer.analyzeEnhancedPolicyEffects(enhancedPolicyContext);
+      console.log('✅ 独自政策拡張AI分析完了:', enhancedAnalysisResult);
+
+      // 基本分析結果も取得（後方互換性のため）
+      const analysisResult = enhancedAnalysisResult;
       
       setIsAnalyzingPolicy(false);
 
@@ -1748,6 +1769,9 @@ function App() {
       emergencyEventCount: 0,
       lastEffect: null,
       showEffectDetails: false,
+      showEnhancedEvaluation: false,
+      lastEnhancedAnalysis: null,
+      enhancedState: EnhancedPolicyAnalyzer.generateInitialEnhancedState(),
       historyData: [],
       usedEventIds: [],
       eventPool: shuffleArray(eventTemplates.map(t => t.id)),
@@ -2410,14 +2434,24 @@ function App() {
               <div className="bg-cyan-900 rounded-lg p-4 border-2 border-cyan-500">
                 <div className="flex justify-between items-start mb-3">
                   <h4 className="text-lg font-semibold text-cyan-300">📊 政策効果</h4>
-                  {(gameState.isGameOver || gameState.turn > gameState.maxTurns) && (
-                    <button
-                      onClick={() => setGameState(prev => ({ ...prev, isGameOver: true }))}
-                      className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-white text-sm font-medium"
-                    >
-                      🏆 結果発表
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    {gameState.lastEnhancedAnalysis && (
+                      <button
+                        onClick={() => setGameState(prev => ({ ...prev, showEnhancedEvaluation: true }))}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm font-medium"
+                      >
+                        📋 詳細評価レポート
+                      </button>
+                    )}
+                    {(gameState.isGameOver || gameState.turn > gameState.maxTurns) && (
+                      <button
+                        onClick={() => setGameState(prev => ({ ...prev, isGameOver: true }))}
+                        className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-white text-sm font-medium"
+                      >
+                        🏆 結果発表
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-4 gap-2 text-xs">
@@ -2541,6 +2575,15 @@ function App() {
     </div>
     
     {/* ランキング関連のモーダルは削除済み */}
+
+    {/* 拡張評価レポート表示 */}
+    {gameState.lastEnhancedAnalysis && (
+      <EnhancedEvaluationDisplay
+        analysis={gameState.lastEnhancedAnalysis}
+        isVisible={gameState.showEnhancedEvaluation}
+        onClose={() => setGameState(prev => ({ ...prev, showEnhancedEvaluation: false }))}
+      />
+    )}
     </>
   );
 }

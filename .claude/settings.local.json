@@ -32,7 +32,9 @@
       "mcp__playwright__browser_type",
       "WebFetch(domain:ai-driven-prime-minister-simulator-nxa45amy7.vercel.app)",
       "Bash(git checkout:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(cat:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

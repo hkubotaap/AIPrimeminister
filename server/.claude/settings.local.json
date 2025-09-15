@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/creli/AIMakedGame/AI-Driven_Prime_Minister_Simulator/src/**)",
+      "Read(//c/Users/creli/AIMakedGame/AI-Driven_Prime_Minister_Simulator/**)",
+      "Bash(npm run build:*)",
+      "Bash(npm run:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(set PORT=3002)",
+      "Bash(cmd /c:*)",
+      "Bash(wmic process where:*)",
+      "Bash(tasklist)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

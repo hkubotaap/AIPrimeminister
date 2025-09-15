@@ -48,7 +48,7 @@ export class SecureAPIClient {
         // 開発環境とプロダクション環境で自動切り替え
         this.baseURL = (import.meta.env as any).PROD 
             ? '/api'  // プロダクション環境
-            : 'http://localhost:3001/api';  // 開発環境
+            : 'http://localhost:3002/api';  // 開発環境
         
         console.log('🔒 Secure API Client initialized');
         console.log('📡 Base URL:', this.baseURL);

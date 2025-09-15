@@ -27,12 +27,108 @@ export class AIProviderManager {
     private ollamaClient: OllamaAPI;
     private providerStatus: Map<AIProvider, AIProviderStatus> = new Map();
 
-    constructor() {
+    constructor(config?: { geminiApiKey?: string; ollamaBaseUrl?: string; defaultProvider?: AIProvider; enableFallback?: boolean }) {
         this.secureClient = new SecureAPIClient();
         this.ollamaClient = new OllamaAPI();
-        
+
         console.log('🤖 AIプロバイダーマネージャー初期化');
         this.initializeProviders();
+    }
+
+    // AI拡張機能用のレスポンス生成メソッド
+    async generateResponse(prompt: string): Promise<string> {
+        const startTime = Date.now();
+
+        try {
+            let result: string;
+
+            switch (this.currentProvider) {
+                case 'gemini':
+                    // サーバーのAI拡張エンドポイントを呼び出し
+                    result = await this.callServerAIEnhancement(prompt);
+                    break;
+
+                case 'ollama':
+                    // Ollama対応は今後の拡張として、現在はフォールバック
+                    result = this.getFallbackAIResponse(prompt);
+                    break;
+
+                case 'fallback':
+                default:
+                    // フォールバック：固定的なレスポンス
+                    result = this.getFallbackAIResponse(prompt);
+                    break;
+            }
+
+            const latency = Date.now() - startTime;
+            console.log(`⚡ ${this.currentProvider} AI拡張レスポンス時間: ${latency}ms`);
+
+            return result;
+
+        } catch (error) {
+            console.error(`❌ ${this.currentProvider} AI拡張エラー:`, error);
+            // エラー時はフォールバックレスポンスを返す
+            return this.getFallbackAIResponse(prompt);
+        }
+    }
+
+    // フォールバック用AI拡張レスポンス
+    private getFallbackAIResponse(prompt: string): string {
+        return JSON.stringify({
+            enhancedText: "標準的な政策選択肢（AI拡張機能は現在利用できません）",
+            policyDetails: {
+                implementationSteps: "詳細な実施計画が必要です",
+                budgetEstimate: "予算見積もりが必要です",
+                timeframe: "実施期間の検討が必要です",
+                responsibleMinistry: "担当省庁の決定が必要です"
+            },
+            theoreticalJustification: "政策理論的根拠の分析が必要です",
+            academicReferences: "関連学術研究の調査が必要です",
+            effectsRefinement: {
+                approvalRating: "0",
+                gdp: "0",
+                nationalDebt: "0",
+                technology: "0",
+                environment: "0",
+                stockPrice: "0",
+                usdJpyRate: "0",
+                diplomacy: "0"
+            }
+        });
+    }
+
+    // サーバーAI拡張エンドポイントを呼び出し
+    private async callServerAIEnhancement(prompt: string): Promise<string> {
+        try {
+            const response = await fetch('/api/enhance-question', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    type: 'enhancement'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                console.log(`✅ サーバーAI拡張成功 ${data.fallback ? '(フォールバック)' : ''}`);
+                return data.enhancedContent;
+            } else {
+                throw new Error('Server returned unsuccessful response');
+            }
+
+        } catch (error) {
+            console.error('❌ サーバーAI拡張エラー:', error);
+            // エラー時はローカルフォールバックを使用
+            return this.getFallbackAIResponse(prompt);
+        }
     }
 
     // プロバイダー設定
